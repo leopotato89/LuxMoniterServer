@@ -1,0 +1,11 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "C:\\Users\\LeoPotato\\Code\\Setup\\php-8.3.33\\php.exe",
+            "args": [
+                "C:\\Users\\LeoPotato\\Code\\LuxMoniter\\cloud\\lux_monitor_manager\\artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
