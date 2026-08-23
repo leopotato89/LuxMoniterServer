@@ -57,14 +57,9 @@ class MqttService
 
             $settings = (new ConnectionSettings)
                 ->setConnectTimeout(5)
-                ->setKeepAliveInterval(30);
-
-            if (config('mqtt.username')) {
-                $settings->setUsername(config('mqtt.username'));
-            }
-            if (config('mqtt.password')) {
-                $settings->setPassword(config('mqtt.password'));
-            }
+                ->setKeepAliveInterval(30)
+                ->setUsername((string) config('mqtt.username'))
+                ->setPassword((string) config('mqtt.password'));
 
             $client->connect($settings, true);
             $client->publish($topic, $payload, $qos, $retain);

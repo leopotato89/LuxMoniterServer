@@ -98,7 +98,8 @@ class DeviceSettingsService
                 }
             }
 
-            sleep(1);
+            // Poll nhanh (~100ms) để rút ngắn độ trễ nhận kết quả từ thiết bị.
+            usleep(100_000);
         }
 
         throw new RuntimeException("Thiết bị không phản hồi lệnh đọc trong {$timeoutSec}s.");
