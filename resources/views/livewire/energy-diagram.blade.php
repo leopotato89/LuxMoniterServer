@@ -271,7 +271,7 @@
             <circle cx="632" cy="416" r="9" :fill="stateColor(latest?.state)" :stroke="stateColor(latest?.state)" stroke-width="1.5">
                 <title x-text="stateLabel(latest?.state)">—</title>
             </circle>
-            <text x="570" y="422" font-size="11" fill="#475569" text-anchor="end">
+            <text x="585" y="422" font-size="11" fill="#475569" text-anchor="end">
                 <tspan font-weight="600">S/N: </tspan>
                 <tspan font-weight="700">{{ $serial }}</tspan>
             </text>
