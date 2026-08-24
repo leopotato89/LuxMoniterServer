@@ -42,6 +42,13 @@
         fill: #0f172a;
     }
 
+    /* Tăng cỡ chữ nhỏ lên 2px (các cỡ lớn 18/28 giữ nguyên) */
+    .diagram-container text[font-size="11"] { font-size: 13px; }
+    .diagram-container text[font-size="12"] { font-size: 14px; }
+    .diagram-container text[font-size="13"] { font-size: 15px; }
+    .diagram-container text[font-size="14"] { font-size: 16px; }
+    .diagram-container text[font-size="15"] { font-size: 17px; }
+
     .main-box { fill: #ffffff; stroke: #0f172a; stroke-width: 2; rx: 24px; ry: 24px; }
     .screen-box { fill: #f8fafc; stroke: #0f172a; stroke-width: 1.5; rx: 12px; ry: 12px; }
     .wire-base { stroke: #0f172a; stroke-width: 2; fill: none; }
@@ -298,9 +305,9 @@
                 <tspan font-weight="700" x-text="fmt(latest?.battery_temp, 1)">0</tspan><tspan font-weight="400">°C</tspan>
             </text>
             <text x="820" y="374" font-size="14">
-                <tspan font-weight="400">Dung lượng: </tspan>
+                <tspan font-weight="400">DL: </tspan>
                 <tspan font-weight="700" x-text="fmt(latest?.battery_count, 0)">2</tspan><tspan font-weight="400"> khối ~ </tspan>
-                <tspan font-weight="700">123</tspan><tspan font-weight="400">Ah</tspan>
+                <tspan font-weight="700" x-text="fmt(latest?.battery_capacity, 0)">0</tspan><tspan font-weight="400">Ah</tspan>
             </text>
 
             <text x="820" y="400" font-size="15" font-weight="900">Hôm nay</text>
