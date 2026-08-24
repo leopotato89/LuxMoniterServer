@@ -21,7 +21,7 @@
             $serial,
             $start->copy()->setTimezone('UTC')->toIso8601ZuluString(),
             $stop->copy()->setTimezone('UTC')->toIso8601ZuluString(),
-            '10m',
+            '1m',
         );
 
         $definitions = [
