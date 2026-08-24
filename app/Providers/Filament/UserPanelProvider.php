@@ -2,57 +2,34 @@
 
 namespace App\Providers\Filament;
 
-use App\Filament\Auth\Login;
 use App\Filament\Auth\Register;
-use Filament\Http\Middleware\Authenticate;
-use Filament\Http\Middleware\AuthenticateSession;
-use Filament\Http\Middleware\DisableBladeIconComponents;
-use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
-use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
-use Illuminate\Routing\Middleware\SubstituteBindings;
-use Illuminate\Session\Middleware\StartSession;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Filament\Support\Enums\Width;
-class UserPanelProvider extends PanelProvider
+
+class UserPanelProvider extends AbstractPanelProvider
 {
     public function panel(Panel $panel): Panel
     {
+        $panel = parent::panel($panel);
+
         return $panel
             ->default()
-            ->id('user')
             ->path('/')
-            ->login(Login::class)
             ->registration(Register::class)
+            ->viteTheme('resources/css/filament/user/theme.css')
             ->colors([
                 'primary' => Color::Emerald,
             ])
-             ->maxContentWidth(Width::Full)
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
-            ->discoverPages(in: app_path('Filament/User/Pages'), for: 'App\Filament\User\Pages')
             ->pages([
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/User/Widgets'), for: 'App\Filament\User\Widgets')
-            ->widgets([])
-            ->middleware([
-                EncryptCookies::class,
-                AddQueuedCookiesToResponse::class,
-                StartSession::class,
-                AuthenticateSession::class,
-                ShareErrorsFromSession::class,
-                PreventRequestForgery::class,
-                SubstituteBindings::class,
-                DisableBladeIconComponents::class,
-                DispatchServingFilamentEvent::class,
-            ])
-            ->authMiddleware([
-                Authenticate::class,
-            ]);
+            ->widgets([]);
+    }
+
+    protected function panelId(): string
+    {
+        return 'user';
     }
 }

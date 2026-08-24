@@ -1,0 +1,23 @@
+@import '/vendor/filament/filament/resources/css/theme.css';
+@import "./layout.css";
+@import "./table.css";
+@import "./side-bar.css";
+@import "./top-bar.css";
+
+
+
+@source '../../../app/Filament/**/*';
+@source '../../../resources/views/filament/**/*';
+@source '../../../resources/views/filament/components/*';
+@source '../../../resources/views/filament/infolists/*';
+@source '../../../resources/views/vendor/filament/**/*';
+@source '../../../resources/views/vendor/filament/**/*';
+@source '../../../resources/views/vendor/filament-panels/**/*';
+@source '../../../resources/views/vendor/filament-panels/*';
+@source '../../../resources/views/vendor/filament-tables/*';
+@source '../../../resources/views/vendor/filament-tables/*';
+@source '../../../resources/views/vendor/commentions/*';
+@source '../../../resources/views/livewire/**/*.blade.php';
+@source '../../../resources/views/ai/*.blade.php';
+@source '../../../resources/views/components/*.blade.php';
+@source '../../../app/Livewire/**/*.php';

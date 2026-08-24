@@ -16,7 +16,8 @@ class AdminSeeder extends Seeder
             ['email' => 'admin@luxmonitor.local'],
             [
                 'name' => 'Admin',
-                'password' => 'password',
+                'username' => 'admin',
+                'password' => '66668888',
                 'is_admin' => true,
                 'is_active' => true,
             ],

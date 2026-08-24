@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Devices\Tables;
 
 use App\Models\Device;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -56,7 +57,11 @@ class DevicesTable
                 EditAction::make()->label('Sửa'),
                 DeleteAction::make()
                     ->label('Xóa')
-                    ->visible(fn (): bool => Filament::getCurrentPanel()?->getId() === 'admin'),
+
+            ])
+            ->headerActions([
+                CreateAction::make()
+                    ->label('Thêm thiết bị')
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

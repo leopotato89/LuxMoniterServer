@@ -1,0 +1,171 @@
+html {
+    font-size: 16px;
+}
+
+
+
+@media (max-width: 1600px) {
+    html {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 1280px) {
+    html {
+        font-size: 12px;
+    }
+}
+
+
+
+/*.fi-resource-list-records-page {*/
+.fi-page-main {
+    overflow-y: auto;
+
+    > .fi-page-content > .fi-sc > .fi-grid-col > .fi-sc-component {
+        padding: 1px;
+    }
+
+    .fi-page-content > .fi-grid {
+        overflow: auto;
+
+        > .fi-grid-col {
+            overflow-y: auto;
+            height: 100%;
+
+            > .fi-sc-component {
+                overflow-y: auto;
+            }
+        }
+    }
+}
+
+/*}*/
+
+.fi-sc {
+    &.fi-sc-has-gap {
+        gap: calc(var(--spacing) * 3);
+    }
+}
+
+.fi-page-header-main-ctn {
+    padding-block: calc(var(--spacing) * 2);
+    row-gap: calc(var(--spacing) * 2);
+}
+
+.fi-simple-layout {
+    position: relative;
+    z-index: 0;
+    width: 100%;
+    min-width: 100vw;
+    background-image: url("/public/images/simple_page_bg.svg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.fi-simple-layout::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    /*background-color: #0838C280; !* Màu overlay *!*/
+    z-index: -1;
+}
+
+.fi-simple-main {
+    background-color: unset;
+    --tw-ring-shadow: none;
+    padding: 0;
+}
+
+.fi-page-header-main-ctn {
+    padding-block: calc(var(--spacing) * 2);
+    row-gap: calc(var(--spacing) * 2);
+}
+
+.fi-simple-header-heading {
+    font-size: 2.9rem;
+}
+
+.fi-simple-header-subheading {
+    font-size: 1.5rem;
+}
+
+/* Simple layout: company header top-left */
+.simple-layout-company-header {
+    position: absolute;
+    top: 16px;
+    left: 20px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    backdrop-filter: blur(4px);
+
+    .simple-layout-company-logo img {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+    }
+
+    .simple-layout-company-info {
+        display: flex;
+        flex-direction: column;
+        font-size: 1.5rem;
+
+        .simple-layout-company-name {
+
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.3;
+        }
+
+        .simple-layout-company-tagline {
+            color: rgba(255, 255, 255, 0.7);
+        }
+    }
+}
+
+/* Simple layout: footer copyright */
+.simple-layout-footer {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    color: #fff;
+    white-space: nowrap;
+}
+
+/* Simple layout: watermark logo bottom-right */
+.simple-layout-watermark {
+    position: absolute;
+    bottom: 5rem;
+    right: 7.5rem;
+    z-index: 10;
+    width: 12rem;
+    height: 12rem;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+}
+
+.fi-input-wrp {
+    & .fi-input-wrp-suffix {
+        &:not(.fi-inline) {
+            border-color: transparent;
+        }
+    }
+}
+
+.fi-main-ctn {
+    background-image: url('/public/images/main_page_bg.svg');
+    background-size: 60%;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: scroll;
+}

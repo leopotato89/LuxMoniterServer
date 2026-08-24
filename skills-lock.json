@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "filament-pro": {
+      "source": "marcelorodrigo/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/filament-pro/SKILL.md",
+      "computedHash": "de378b8a7a213c8ad393e2b5c36155699f35232d0bcb05642c2b6877a53f5005"
+    }
+  }
+}

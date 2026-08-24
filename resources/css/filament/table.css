@@ -1,0 +1,35 @@
+.fi-ta-main {
+    /*@apply border border-gray-200 rounded-md bg-white p-1    ;*/
+
+    .fi-ta-table {
+
+        th {
+            background-color: #f8fafc;
+            position: sticky;
+            top: 0;
+            box-shadow: inset 0 -1px #e4e4e7;
+            z-index: 10;
+        }
+
+        .fi-ta-text {
+            &.fi-ta-text-has-descriptions {
+                row-gap: 0;
+
+                /*.fi-ta-text-item {*/
+                /*    @apply font-bold;*/
+                /*}*/
+
+                .fi-ta-text-description {
+                    font-size: 12px;
+                }
+
+            }
+        }
+    }
+}
+
+.fi-fo-table-repeater{
+    td{
+        padding-inline: 2px;
+    }
+}
