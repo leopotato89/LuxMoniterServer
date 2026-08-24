@@ -18,7 +18,7 @@
         width: 100%;
         /*max-height: 80rem;*/
         /*max-width: 1080px;*/
-        padding: 16px;
+        padding: 2px;
         box-sizing: border-box;
         border: 1px solid #e5e7eb;
     }
