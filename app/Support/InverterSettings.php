@@ -23,7 +23,7 @@ class InverterSettings
     {
         return [
             [
-                'title' => 'Cài đặt Pin',
+                'title' => 'Pin lưu trữ',
                 'tabs' => [
                     [
                         'name' => 'Sạc',
@@ -101,7 +101,7 @@ class InverterSettings
     /**
      * Tất cả field (kể cả của timerange) dạng phẳng với key ổn định.
      *
-     * @return array<string, array<string, mixed>>  key => field
+     * @return array<string, array<string, mixed>> key => field
      */
     public static function fields(): array
     {
@@ -141,7 +141,7 @@ class InverterSettings
      * Chuyển bản đồ register thô (reg => uint16) thành các giá trị form.
      *
      * @param  array<int, int>  $regs
-     * @return array<string, mixed>  key => giá trị form
+     * @return array<string, mixed> key => giá trị form
      */
     public static function valuesFromRegs(array $regs): array
     {
@@ -160,9 +160,9 @@ class InverterSettings
     /**
      * Sinh các lệnh ghi từ các field đã thay đổi (so với giá trị hiện tại).
      *
-     * @param  array<string, mixed>  $new     key => giá trị form mới
-     * @param  array<string, mixed>  $current key => giá trị form hiện tại
-     * @return array<int, array{reg:int, value:int, bit?:int, bits?:int}>  danh sách lệnh cần ghi
+     * @param  array<string, mixed>  $new  key => giá trị form mới
+     * @param  array<string, mixed>  $current  key => giá trị form hiện tại
+     * @return array<int, array{reg:int, value:int, bit?:int, bits?:int}> danh sách lệnh cần ghi
      */
     public static function writesFromChanges(array $new, array $current): array
     {
@@ -183,6 +183,22 @@ class InverterSettings
         }
 
         return $writes;
+    }
+
+    /**
+     * Lệnh ghi cho 1 field cụ thể (theo key "reg_X" hoặc "reg_X_bY").
+     *
+     * @return array{reg:int, value:int, bit?:int, bits?:int}|null
+     */
+    public static function writeForField(string $key, mixed $value): ?array
+    {
+        $field = self::fields()[$key] ?? null;
+
+        if ($field === null) {
+            return null;
+        }
+
+        return self::encodeWrite($field, $value);
     }
 
     // ============================================================

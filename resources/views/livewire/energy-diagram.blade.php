@@ -82,16 +82,16 @@
 
         <circle r="3.5" class="particle" x-show="((latest?.export_power ?? 0) + (latest?.import_power ?? 0)) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-grid-j" /></animateMotion></circle>
 
-        <circle r="3.5" class="particle" x-show="((latest?.inverter_power ?? 0) > 0) || (((latest?.charge_power ?? 0) > 0) && (((latest?.import_power ?? 0) + (latest?.accouple_power ?? 0)) > 0))"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-inv-j" /></animateMotion></circle>
+        <circle r="3.5" class="particle" x-show="!latest?.eps_load_show && (((latest?.inverter_power ?? 0) > 0) || (((latest?.charge_power ?? 0) > 0) && (((latest?.import_power ?? 0) + (latest?.accouple_power ?? 0)) > 0)))"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-inv-j" /></animateMotion></circle>
 
-        <circle r="3.5" class="particle" x-show="(latest?.load_power ?? 0) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-j-load" /></animateMotion></circle>
+        <circle r="3.5" class="particle" x-show="((latest?.eps_load_show ? 0 : latest?.load_power) ?? 0) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-j-load" /></animateMotion></circle>
 
         <!-- ===== CÁC HẠT KHÁC ===== -->
         <circle r="4" class="particle-orange" x-show="(latest?.pv_power ?? 0) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-pv-inverter" /></animateMotion></circle>
 
         <circle r="4" class="particle-green" x-show="((latest?.charge_power ?? 0) + (latest?.discharge_power ?? 0)) > 0"><animateMotion dur="1.2s" repeatCount="indefinite"><mpath href="#path-inverter-battery" /></animateMotion></circle>
 
-        <circle r="4" class="particle-purple" x-show="(latest?.backup_power ?? 0) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-inverter-backup" /></animateMotion></circle>
+        <circle r="4" class="particle-purple" x-show="(latest?.eps_load_show && (latest?.eps_power ?? 0) > 0)"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-inverter-backup" /></animateMotion></circle>
 
 
         <!-- ===== KHỐI 1: TẤM PIN ===== -->
@@ -139,9 +139,9 @@
         </g>
 
 
-        <!-- ===== KHỐI 2: ACOUPLE ===== -->
+        <!-- ===== KHỐI 2: AC COUPLE ===== -->
         <g id="acouple-top">
-            <g transform="translate(225, 105)">
+            <g transform="translate(235, 105)">
                 <rect x="4" y="4" width="56" height="52" rx="8" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
                 <line x1="12" y1="10" x2="52" y2="10" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round" />
                 <circle cx="32" cy="34" r="18" stroke="#0f172a" stroke-width="1.5" fill="#f8fafc" />
@@ -151,7 +151,7 @@
                 <path d="M 26 34 Q 31 45, 36 34 T 46 34" class="icon-path" stroke-width="1.8" stroke="#0284c7" />
             </g>
 
-            <text x="315" y="128" font-size="18" font-weight="400">Acouple</text>
+            <text x="315" y="128" font-size="18" font-weight="400">AC Couple</text>
             <text x="315" y="156" font-size="28">
                 <tspan font-weight="800" x-text="fmt(latest?.accouple_power, 0)">0</tspan><tspan font-weight="400">W</tspan>
             </text>
@@ -225,7 +225,7 @@
 
             <text x="315" y="498" font-size="18" font-weight="400">Tải sử dụng</text>
             <text x="315" y="526" font-size="28">
-                <tspan font-weight="800" x-text="fmt(latest?.load_power, 0)">0</tspan><tspan font-weight="400">W</tspan>
+                <tspan font-weight="800" x-text="fmt((latest?.eps_load_show ? 0 : latest?.load_power) ?? 0, 0)">0</tspan><tspan font-weight="400">W</tspan>
             </text>
 
             <text x="315" y="556" font-size="14">
@@ -332,20 +332,20 @@
             </g>
 
             <text x="470" y="618" font-size="14">
-                <tspan font-weight="700" x-text="fmt(latest?.gen_voltage, 1)">0</tspan><tspan font-weight="400">Vac</tspan>
+                <tspan font-weight="700" x-text="fmt(latest?.eps_voltage, 1)">0</tspan><tspan font-weight="400">Vac</tspan>
             </text>
             <text x="470" y="636" font-size="14">
-                <tspan font-weight="700" x-text="fmt(latest?.gen_frequency, 1)">0</tspan><tspan font-weight="400">Hz</tspan>
+                <tspan font-weight="700" x-text="fmt(latest?.eps_frequency, 1)">0</tspan><tspan font-weight="400">Hz</tspan>
             </text>
 
             <text x="580" y="558" font-size="18" font-weight="400">Nguồn dự phòng</text>
             <text x="580" y="586" font-size="28">
-                <tspan font-weight="800" x-text="fmt(latest?.backup_power, 0)">0</tspan><tspan font-weight="400">W</tspan>
+                <tspan font-weight="800" x-text="fmt((latest?.eps_load_show ? latest?.eps_power : 0) ?? 0, 0)">0</tspan><tspan font-weight="400">W</tspan>
             </text>
 
             <text x="580" y="628" font-size="14">
                 <tspan font-weight="400">Hôm nay: </tspan>
-                <tspan font-weight="700" x-text="fmt(latest?.backup_energy_day, 1)">0</tspan><tspan font-weight="400">kWh</tspan>
+                <tspan font-weight="700" x-text="fmt(latest?.eps_energy_day, 1)">0</tspan><tspan font-weight="400">kWh</tspan>
             </text>
         </g>
 

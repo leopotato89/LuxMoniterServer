@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Devices\Pages;
 
 use App\Filament\Resources\Devices\DeviceResource;
-use Filament\Actions\Action;
+use App\Services\DeviceSettingsService;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -28,10 +28,7 @@ class ViewDevice extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('deviceSettings')
-                ->label('Cài đặt biến tần')
-                ->icon('heroicon-m-cog-6-tooth')
-                ->url(fn () => DeviceSettings::getUrl(['record' => $this->record])),
+            app(DeviceSettingsService::class)->action($this->record),
             EditAction::make(),
         ];
     }

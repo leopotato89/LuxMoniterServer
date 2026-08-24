@@ -1,0 +1,39 @@
+.fi-section {
+    .fi-section-header {
+
+    }
+    &:not(.fi-section-not-contained) {
+        &:not(.fi-aside) {
+            & > .fi-section-header {
+                padding-inline: calc(var(--spacing) * 4);
+                padding-block: calc(var(--spacing) * 3);
+                background-color: #f8fafc;
+                border-top-left-radius: .75rem;
+                border-top-right-radius: .75rem;
+                /*.fi-section-header-heading{*/
+                /*    position: relative;*/
+                /*    !*padding-left: 10px;*!*/
+                /*}*/
+
+                /*.fi-section-header-heading:after {*/
+                /*    content: "";*/
+                /*    position: absolute;*/
+                /*    bottom: 0;*/
+                /*    left: 0;*/
+                /*    height: 100%;*/
+                /*    width: 5px;*/
+                /*    background-color: #db9659;*/
+                /*    border-radius: 5px;*/
+                /*}*/
+            }
+        }
+        &:not(.fi-divided) {
+            & > .fi-section-content-ctn > .fi-section-content {
+                padding: calc(var(--spacing) * 4);
+            }
+        }
+    }
+}
+
+
+

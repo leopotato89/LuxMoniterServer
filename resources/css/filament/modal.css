@@ -1,0 +1,10 @@
+.fi-fo-modal-table-select {
+    &:not(.fi-fo-modal-table-select-multiple) {
+        & > div:first-child {
+            @apply flex-1;
+        }
+    }
+}
+.fi-modal-content{
+    @apply p-2;
+}
