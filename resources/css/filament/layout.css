@@ -30,10 +30,14 @@ html {
     z-index: 0;
     width: 100%;
     min-width: 100vw;
-    background-image: url("/public/images/simple_page_bg.svg");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    /*background-image: url("/public/images/simple_page_bg.svg");*/
+
+    background-color: #0f172a;
+    /*background-size: cover;*/
+    /*background-position: center;*/
+    /*background-repeat: no-repeat;*/
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, #4f5051 1px, transparent 1px), linear-gradient(to bottom, #4f5051 1px, transparent 1px);
 }
 
 .fi-simple-layout::before {
@@ -136,10 +140,11 @@ html {
 
 .fi-main-ctn {
     /*background-image: url('/public/images/main_page_bg.svg');*/
-    background-size: 60%;
+    background-color: #0f172a;
+    /* background-size: 60%;
     background-position: center center;
     background-repeat: no-repeat;
-    background-attachment: scroll;
+    background-attachment: scroll; */
 }
 
 .fi-ac-btn-action.fi-btn.fi-size-md {

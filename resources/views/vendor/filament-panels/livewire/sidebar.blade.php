@@ -82,10 +82,10 @@
                     {{--                        <x-filament-panels::logo />--}}
                     {{--                    @endif--}}
                     <a href="{{filament()->getHomeUrl()}}" class="flex items-center gap-3">
-                        <div class="rounded-xl bg-primary-700 w-9.5 h-9.5 flex items-center justify-center">
-                            <x-filament::icon icon="vaadin-scale" color="white"
-                                              :size="Filament\Support\Enums\IconSize::Large"/>
-                        </div>
+{{--                        <div class="rounded-xl bg-primary-700 w-9.5 h-9.5 flex items-center justify-center">--}}
+{{--                            <x-filament::icon :icon="\Filament\Support\Icons\Heroicon::Sun" color="white"--}}
+{{--                                              :size="Filament\Support\Enums\IconSize::Large"/>--}}
+{{--                        </div>--}}
 
                         <div>
                             <h1 class="text-sm font-bold leading-tight text-white">{{ config('app.name') }}</h1>

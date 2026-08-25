@@ -23,12 +23,12 @@
 
         {{-- Company header --}}
         <div class="simple-layout-company-header">
-            <div class="simple-layout-company-logo bg-white rounded-full">
-                <img src="/images/logo-original.svg" alt="Xuân Cương Logo" />
-            </div>
+{{--            <div class="simple-layout-company-logo bg-white rounded-full">--}}
+{{--                <img src="/images/logo-original.svg" alt="Xuân Cương Logo" />--}}
+{{--            </div>--}}
             <div class="simple-layout-company-info">
-                <span class="simple-layout-company-name">CÔNG TY CỔ PHẦN HỮU NGHỊ XUÂN CƯƠNG</span>
-                <span class="simple-layout-company-tagline">Uy tín trên hợp tác</span>
+                <span class="simple-layout-company-name">HỆ THỐNG GIÁM SÁT NĂNG LƯỢNG MẶT TRỜI</span>
+                <span class="simple-layout-company-tagline"></span>
             </div>
         </div>
 
@@ -61,13 +61,13 @@
         {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::FOOTER, scopes: $renderHookScopes) }}
 
         {{-- Footer copyright --}}
-        <div class="simple-layout-footer">
-            <span>© {{ date('Y') }} Công ty Cổ phần Hữu Nghị Xuân Cương</span>
-        </div>
+{{--        <div class="simple-layout-footer">--}}
+{{--            <span>© {{ date('Y') }} Công ty Cổ phần Hữu Nghị Xuân Cương</span>--}}
+{{--        </div>--}}
 
         {{-- Watermark logo bottom-right --}}
         <div class="simple-layout-watermark">
-            <img src="/images/logo-original-gray.svg" alt="Xuân Cương" />
+{{--            <img src="/images/logo-original-gray.svg" alt="Xuân Cương" />--}}
         </div>
 
         {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::SIMPLE_LAYOUT_END, scopes: $renderHookScopes) }}
