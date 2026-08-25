@@ -6,6 +6,7 @@ use App\Filament\Resources\Devices\DeviceResource;
 use App\Services\DeviceSettingsService;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Enums\Size;
 
 class ViewDevice extends ViewRecord
 {
@@ -28,8 +29,8 @@ class ViewDevice extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            app(DeviceSettingsService::class)->action($this->record),
-            EditAction::make(),
+            app(DeviceSettingsService::class)->action($this->record)->size(Size::Small),
+            EditAction::make()->size(Size::Small),
         ];
     }
 }

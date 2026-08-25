@@ -22,32 +22,32 @@ class DeviceInfolist
 
 
                 Group::make()
-                    ->columnSpan(18)
+                    ->columnSpan(24)
                     ->schema([
                         Livewire::make(DeviceRealtime::class, fn ($record): array => ['serial' => $record?->serial]),
 
                     ]),
-                Section::make('Thông tin thiết bị')
-                    ->schema([
-                        TextEntry::make('serial')->label('Serial')->inlineLabel(),
-                        TextEntry::make('name')->label('Tên thiết bị')->placeholder('—')->inlineLabel(),
-                        TextEntry::make('owner.name')->label('Chủ sở hữu')->placeholder('Chưa gắn')->inlineLabel(),
-                        TextEntry::make('device_code')->label('Mã thiết bị')->placeholder('Chưa cấp')->inlineLabel(),
-                        IconEntry::make('verified_at')
-                            ->inlineLabel()
-                            ->label('Đã xác minh')
-                            ->boolean()
-                            ->trueIcon('heroicon-o-check-circle')
-                            ->falseIcon('heroicon-o-x-circle'),
-                        IconEntry::make('enabled')
-                            ->inlineLabel()
-                            ->label('Đang bật')
-                            ->boolean(),
-                        TextEntry::make('created_at')
-                            ->inlineLabel()
-                            ->label('Tạo lúc')
-                            ->dateTime('d/m/Y H:i'),
-                    ])->columns(1)->columnSpan(6),
+                // Section::make('Thông tin thiết bị')
+                //     ->schema([
+                //         TextEntry::make('serial')->label('Serial')->inlineLabel(),
+                //         TextEntry::make('name')->label('Tên thiết bị')->placeholder('—')->inlineLabel(),
+                //         TextEntry::make('owner.name')->label('Chủ sở hữu')->placeholder('Chưa gắn')->inlineLabel(),
+                //         TextEntry::make('device_code')->label('Mã thiết bị')->placeholder('Chưa cấp')->inlineLabel(),
+                //         IconEntry::make('verified_at')
+                //             ->inlineLabel()
+                //             ->label('Đã xác minh')
+                //             ->boolean()
+                //             ->trueIcon('heroicon-o-check-circle')
+                //             ->falseIcon('heroicon-o-x-circle'),
+                //         IconEntry::make('enabled')
+                //             ->inlineLabel()
+                //             ->label('Đang bật')
+                //             ->boolean(),
+                //         TextEntry::make('created_at')
+                //             ->inlineLabel()
+                //             ->label('Tạo lúc')
+                //             ->dateTime('d/m/Y H:i'),
+                //     ])->columns(1)->columnSpan(6),
 
                 Section::make('Lịch sử năng lượng')
                     ->columnSpan(24)

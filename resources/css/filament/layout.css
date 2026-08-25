@@ -3,40 +3,12 @@ html {
 }
 
 
-
-/*@media (max-width: 1600px) {*/
-/*    html {*/
-/*        font-size: 14px;*/
-/*    }*/
-/*}*/
-
-/*@media (max-width: 1280px) {*/
-/*    html {*/
-/*        font-size: 12px;*/
-/*    }*/
-/*}*/
-
-
-
 /*.fi-resource-list-records-page {*/
 .fi-page-main {
     overflow-y: auto;
 
     > .fi-page-content > .fi-sc > .fi-grid-col > .fi-sc-component {
         padding: 1px;
-    }
-
-    .fi-page-content > .fi-grid {
-        overflow: auto;
-
-        > .fi-grid-col {
-            overflow-y: auto;
-            height: 100%;
-
-            > .fi-sc-component {
-                overflow-y: auto;
-            }
-        }
     }
 }
 
@@ -163,9 +135,18 @@ html {
 }
 
 .fi-main-ctn {
-    background-image: url('/public/images/main_page_bg.svg');
+    /*background-image: url('/public/images/main_page_bg.svg');*/
     background-size: 60%;
     background-position: center center;
     background-repeat: no-repeat;
     background-attachment: scroll;
 }
+
+.fi-ac-btn-action.fi-btn.fi-size-md {
+    gap: var(--spacing);
+    padding-inline: calc(var(--spacing) * 2.5);
+    padding-block: calc(var(--spacing) * 1.5);
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+}
+
