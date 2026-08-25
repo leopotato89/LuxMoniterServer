@@ -153,7 +153,7 @@
             max-height: 400px !important;
         }
     </style>
-    <div wire:key="history-chart-{{ $date }}" x-load x-load-src="{{ FilamentAsset::getAlpineComponentSrc('chart', 'filament/widgets') }}"
+    <div wire:key="history-chart-{{ $date }}" wire:poll.180s x-load x-load-src="{{ FilamentAsset::getAlpineComponentSrc('chart', 'filament/widgets') }}"
         data-chart-type="{{ $type }}" x-data="chart({
                     cachedData: @js($cachedData),
                     options: {

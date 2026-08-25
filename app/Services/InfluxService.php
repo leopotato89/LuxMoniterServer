@@ -161,17 +161,15 @@ class InfluxService
     {
         $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
 
-        // aggregateWindow yêu cầu location dạng record {zone, offset}, không phải chuỗi
-        $offsetHours = (int) round(now(config('app.timezone'))->getOffset() / 3600);
-        $location = '{zone: "'.config('app.timezone').'", offset: '.($offsetHours >= 0 ? '' : '-').abs($offsetHours).'h}';
-
+        // KHÔNG dùng aggregateWindow(location) vì nó căn cửa sổ 1 ngày không khớp
+        // nửa đêm giờ địa phương (lệch/đổi ngày). Truy vấn dữ liệu thô đã pivot rồi
+        // nhóm theo ngày địa phương trong PHP, lấy giá trị CUỐI mỗi ngày.
         $flux = sprintf(
             'from(bucket: "%s")
   |> range(start: %s, stop: %s)
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
   |> filter(fn: (r) => %s)
-  |> aggregateWindow(every: 1d, fn: last, createEmpty: false, location: %s)
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
   |> keep(columns: ["_time", %s])
   |> sort(columns: ["_time"])',
@@ -180,7 +178,6 @@ class InfluxService
             $stop,
             $serial,
             implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
-            $location,
             implode(', ', array_map(fn (string $f): string => '"'.$f.'"', $fields)),
         );
 
@@ -196,7 +193,7 @@ class InfluxService
             return [];
         }
 
-        return $this->parseDailyEnergyCsv($response->body());
+        return $this->parseDailyEnergyCsv($response->body(), $fields);
     }
 
     /**
@@ -260,12 +257,16 @@ class InfluxService
     /**
      * Parse CSV pivoted (cột _time + các field *_energy_day) thành mảng theo ngày.
      *
+     * Vì dữ liệu thô ghi nhiều điểm/giây, ta nhóm theo NGÀY ĐỊA PHƯƠNG và giữ giá trị
+     * CUỐI CÙNG của mỗi ngày (các dòng đã sắp xếp _time tăng dần).
+     *
+     * @param  array<int, string>  $fields
      * @return array<string, array<string, float>>
      */
-    protected function parseDailyEnergyCsv(string $csv): array
+    protected function parseDailyEnergyCsv(string $csv, array $fields): array
     {
-        $days = [];
         $header = null;
+        $lastByDay = [];
 
         foreach (preg_split('/\r?\n/', trim($csv)) ?: [] as $line) {
             if ($line === '' || str_starts_with($line, '#')) {
@@ -288,14 +289,22 @@ class InfluxService
 
             $day = Carbon::parse($time)->setTimezone(config('app.timezone'))->format('Y-m-d');
 
+            foreach ($fields as $f) {
+                $lastByDay[$day][$f] = (float) ($cols[$header[$f]] ?? 0);
+            }
+        }
+
+        $days = [];
+
+        foreach ($lastByDay as $day => $row) {
             $days[$day] = [
-                'pv' => (float) ($cols[$header['pv_energy_day']] ?? 0),
-                'accouple' => (float) ($cols[$header['accouple_energy_day']] ?? 0),
-                'charge' => (float) ($cols[$header['charge_energy_day']] ?? 0),
-                'discharge' => (float) ($cols[$header['discharge_energy_day']] ?? 0),
-                'load' => (float) ($cols[$header['load_energy_day']] ?? 0),
-                'import' => (float) ($cols[$header['import_energy_day']] ?? 0),
-                'export' => (float) ($cols[$header['export_energy_day']] ?? 0),
+                'pv' => (float) ($row['pv_energy_day'] ?? 0),
+                'accouple' => (float) ($row['accouple_energy_day'] ?? 0),
+                'charge' => (float) ($row['charge_energy_day'] ?? 0),
+                'discharge' => (float) ($row['discharge_energy_day'] ?? 0),
+                'load' => (float) ($row['load_energy_day'] ?? 0),
+                'import' => (float) ($row['import_energy_day'] ?? 0),
+                'export' => (float) ($row['export_energy_day'] ?? 0),
             ];
         }
 

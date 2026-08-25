@@ -52,9 +52,17 @@
             latest: config.initialLatest || {},
             online: !!config.initialOnline,
             timestamp: config.initialTimestamp || null,
+            _interval: null,
             init() {
                 this.refresh();
-                setInterval(() => this.refresh(), 3000);
+                this._interval = setInterval(() => this.refresh(), 3000);
+            },
+            // Dọn interval khi component bị hủy (re-render/wire:poll) để tránh fetch trùng lặp
+            destroy() {
+                if (this._interval) {
+                    clearInterval(this._interval);
+                    this._interval = null;
+                }
             },
             modeLabel() {
                 return stateLabel(this.latest?.state);
@@ -82,7 +90,6 @@
         initialOnline: @js($online),
         initialTimestamp: @js($timestamp),
     })"
-    x-init="init()"
     class="space-y-3"
 >
         <div class="flex items-center">
