@@ -21,7 +21,7 @@
             $serial,
             $start->copy()->setTimezone('UTC')->toIso8601ZuluString(),
             $stop->copy()->setTimezone('UTC')->toIso8601ZuluString(),
-            '1m',
+            '3m',
         );
 
         $definitions = [
@@ -80,7 +80,7 @@
                     'pointBackgroundColor' => $def['color'],
                     'pointBorderColor' => '#ffffff',
                     'pointBorderWidth' => 2,
-                    'borderWidth' => 2,
+                    'borderWidth' => 1,
                     // SOC dùng trục Y riêng bên phải (0–100); còn lại dùng trục trái (W)
                     'yAxisID' => $key === 'soc' ? 'y1' : 'y',
                     // Đánh dấu series 2 chiều để tooltip hiển thị giá trị dương theo dấu
@@ -113,20 +113,12 @@
                     'grid' => [
                         'color' => 'rgba(0, 0, 0, 0.05)',
                     ],
-                    'title' => [
-                        'display' => true,
-                        'text' => 'Công suất (W)',
-                    ],
                 ],
                 // Trục Y riêng cho SOC bên phải: 0 ở dưới, 100 ở trên
                 'y1' => [
                     'position' => 'right',
                     'min' => 0,
                     'max' => 100,
-                    'title' => [
-                        'display' => true,
-                        'text' => 'SOC (%)',
-                    ],
                     'grid' => [
                         'drawOnChartArea' => false,
                     ],
@@ -164,7 +156,45 @@
     <div wire:key="history-chart-{{ $date }}" x-load x-load-src="{{ FilamentAsset::getAlpineComponentSrc('chart', 'filament/widgets') }}"
         data-chart-type="{{ $type }}" x-data="chart({
                     cachedData: @js($cachedData),
-                    options: @js($options),
+                    options: {
+                        ...@js($options),
+                        scales: {
+                            ...(@js($options['scales'] ?? [])),
+                            y: {
+                                ...(@js($options['scales']['y'] ?? [])),
+                                ticks: {
+                                    ...(@js($options['scales']['y']['ticks'] ?? [])),
+                                    callback: function (value) {
+                                        const abs = Math.abs(value)
+                                        return abs >= 1000 ? (value / 1000) + 'k' : value
+                                    },
+                                },
+                            },
+                        },
+                        plugins: {
+                            ...(@js($options['plugins'] ?? [])),
+                            tooltip: {
+                                ...(@js($options['plugins']['tooltip'] ?? [])),
+                                callbacks: {
+                                    label: function (context) {
+                                        const raw = context.parsed.y
+                                        const abs = Math.round(Math.abs(raw)).toLocaleString('en-US')
+                                        const bidir = context.dataset.bidir
+
+                                        if (bidir === 'charge') {
+                                            return (raw >= 0 ? 'Sạc: ' : 'Xả: ') + abs + ' W'
+                                        }
+
+                                        if (bidir === 'grid') {
+                                            return (raw >= 0 ? 'Đẩy lưới: ' : 'Lấy lưới: ') + abs + ' W'
+                                        }
+
+                                        return context.dataset.label + ': ' + abs
+                                    },
+                                },
+                            },
+                        },
+                    },
                     type: @js($type),
                 })" {{
         (new FilamentComponentAttributeBag)->class([

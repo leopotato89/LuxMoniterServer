@@ -1,6 +1,6 @@
 @props([
     'actions' => [],
-    'actionsAlignment' => null,
+    'actionsAlignment' => \Filament\Support\Enums\Alignment::End,
     'breadcrumbs' => [],
     'heading' => null,
     'subheading' => null,
@@ -9,28 +9,31 @@
 <header
     {{
         $attributes->class([
-            'fi-header border-b border-gray-300 px-4 pb-1',
+            'fi-header border-b border-gray-300 px-4 pb-1 justify-end',
             'fi-header-has-breadcrumbs' => $breadcrumbs,
         ])
     }}
 >
-    <div>
-        @if ($breadcrumbs)
-            <x-filament::breadcrumbs :breadcrumbs="$breadcrumbs" />
-        @endif
+    @if ($breadcrumbs||filled($heading)||filled($subheading))
+        <x-filament::breadcrumbs :breadcrumbs="$breadcrumbs"/>
+        <div>
+            @if ($breadcrumbs)
+                <x-filament::breadcrumbs :breadcrumbs="$breadcrumbs"/>
+            @endif
 
-        @if (filled($heading))
-            <h1 class="fi-header-heading">
-                {{ $heading }}
-            </h1>
-        @endif
+            @if (filled($heading))
+                <h1 class="fi-header-heading">
+                    {{ $heading }}
+                </h1>
+            @endif
 
-        @if (filled($subheading))
-            <p class="fi-header-subheading">
-                {{ $subheading }}
-            </p>
-        @endif
-    </div>
+            @if (filled($subheading))
+                <p class="fi-header-subheading">
+                    {{ $subheading }}
+                </p>
+            @endif
+        </div>
+    @endif
 
     @php
         $beforeActions = \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::PAGE_HEADER_ACTIONS_BEFORE, scopes: $this->getRenderHookScopes());
