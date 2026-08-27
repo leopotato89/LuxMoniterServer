@@ -58,23 +58,13 @@
     .particle-purple { fill: #9333ea; filter: drop-shadow(0px 0px 2px #7e22ce); }
     .particle-green { fill: #16a34a; filter: drop-shadow(0px 0px 2px #15803d); }
     .icon-path { fill: none; stroke: #0f172a; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    /* Hạt trong pool: ẩn mặc định, JS engine bật/tắt khi có hạt chạy */
+    .particle-slot { visibility: hidden; }
 </style>
 @endonce
 
 <div class="diagram-container">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 700" class="grid-background responsive-svg">
-
-        <defs>
-            <path id="path-pv-inverter" d="M 440,140 L 440,238" />
-            <path id="path-ac-j" d="M 266,200 L 266,340" />
-            <path id="path-grid-j" :d="(latest?.export_power ?? 0) > 0 ? 'M 266,340 L 195,340' : 'M 195,340 L 266,340'" />
-            <!-- Hướng dây biến tần: inverter đang PHÁT (inverter_power > 0) → ĐI RA (338→266); ngược lại (nạp ắc quy từ lưới/AC) → ĐI VÀO (266→338) -->
-            <path id="path-inv-j" :d="(latest?.inverter_power ?? 0) > 0 ? 'M 338,340 L 266,340' : 'M 266,340 L 338,340'" />
-            <path id="path-j-load" d="M 266,340 L 266,470" />
-            <!-- Hướng dây pin: SẠC đi VÀO pin (542→613), XẢ đi RA khỏi pin (613→542). Dựa theo công suất thực, không phải state. -->
-            <path id="path-inverter-battery" :d="(latest?.charge_power ?? 0) > (latest?.discharge_power ?? 0) ? 'M 542,340 L 613,340' : 'M 613,340 L 542,340'" />
-            <path id="path-inverter-backup" d="M 440,442 L 440,530" />
-        </defs>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 850 700" class="grid-background responsive-svg" x-init="initParticles($el)">
 
         <!-- ===== DÂY KẾT NỐI (TĨNH) ===== -->
         <line x1="440" y1="140" x2="440" y2="238" class="wire-base" />
@@ -84,21 +74,45 @@
         <line x1="542" y1="340" x2="613" y2="340" class="wire-base" />
         <line x1="440" y1="442" x2="440" y2="530" class="wire-base" />
 
-        <!-- ===== HẠT Ở NGÃ 4 (AC, Lưới, Biến tần → VÀO ngã 4 đồng bộ; Tải ← RA khỏi ngã 4) ===== -->
-        <circle r="3.5" class="particle" x-show="(latest?.accouple_power ?? 0) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-ac-j" /></animateMotion></circle>
+        <!-- ===== POOL HẠT ĐIỆN TÍCH — JS engine (createParticleEngine) điều khiển vị trí/tốc độ ===== -->
+        <g id="particle-pool">
+            <circle data-track="ac" class="particle particle-slot" r="3.5" />
+            <circle data-track="ac" class="particle particle-slot" r="3.5" />
+            <circle data-track="ac" class="particle particle-slot" r="3.5" />
+            <circle data-track="ac" class="particle particle-slot" r="3.5" />
+            <circle data-track="ac" class="particle particle-slot" r="3.5" />
 
-        <circle r="3.5" class="particle" x-show="((latest?.export_power ?? 0) + (latest?.import_power ?? 0)) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-grid-j" /></animateMotion></circle>
+            <circle data-track="grid" class="particle particle-slot" r="3.5" />
+            <circle data-track="grid" class="particle particle-slot" r="3.5" />
+            <circle data-track="grid" class="particle particle-slot" r="3.5" />
+            <circle data-track="grid" class="particle particle-slot" r="3.5" />
+            <circle data-track="grid" class="particle particle-slot" r="3.5" />
 
-        <circle r="3.5" class="particle" x-show="!(latest?.eps_power > 0) && (((latest?.inverter_power ?? 0) > 0) || (((latest?.charge_power ?? 0) > 0) && (((latest?.import_power ?? 0) + (latest?.accouple_power ?? 0)) > 0)))"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-inv-j" /></animateMotion></circle>
+            <circle data-track="inv" class="particle particle-slot" r="3.5" />
+            <circle data-track="inv" class="particle particle-slot" r="3.5" />
+            <circle data-track="inv" class="particle particle-slot" r="3.5" />
+            <circle data-track="inv" class="particle particle-slot" r="3.5" />
+            <circle data-track="inv" class="particle particle-slot" r="3.5" />
 
-        <circle r="3.5" class="particle" x-show="((latest?.eps_power > 0 ? 0 : latest?.load_power) ?? 0) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-j-load" /></animateMotion></circle>
+            <circle data-track="load" class="particle particle-slot" r="3.5" />
+            <circle data-track="load" class="particle particle-slot" r="3.5" />
+            <circle data-track="load" class="particle particle-slot" r="3.5" />
+            <circle data-track="load" class="particle particle-slot" r="3.5" />
+            <circle data-track="load" class="particle particle-slot" r="3.5" />
 
-        <!-- ===== CÁC HẠT KHÁC ===== -->
-        <circle r="4" class="particle-orange" x-show="(latest?.pv_power ?? 0) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-pv-inverter" /></animateMotion></circle>
+            <circle data-track="pv" class="particle-orange particle-slot" r="4" />
+            <circle data-track="pv" class="particle-orange particle-slot" r="4" />
+            <circle data-track="pv" class="particle-orange particle-slot" r="4" />
 
-        <circle r="4" class="particle-green" x-show="((latest?.charge_power ?? 0) + (latest?.discharge_power ?? 0)) > 0"><animateMotion dur="1.2s" repeatCount="indefinite"><mpath href="#path-inverter-battery" /></animateMotion></circle>
+            <circle data-track="batt" class="particle-green particle-slot" r="4" />
+            <circle data-track="batt" class="particle-green particle-slot" r="4" />
+            <circle data-track="batt" class="particle-green particle-slot" r="4" />
+            <circle data-track="batt" class="particle-green particle-slot" r="4" />
 
-        <circle r="4" class="particle-purple" x-show="(latest?.eps_power ?? 0) > 0"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#path-inverter-backup" /></animateMotion></circle>
+            <circle data-track="eps" class="particle-purple particle-slot" r="4" />
+            <circle data-track="eps" class="particle-purple particle-slot" r="4" />
+            <circle data-track="eps" class="particle-purple particle-slot" r="4" />
+        </g>
 
 
         <!-- ===== KHỐI 1: TẤM PIN ===== -->
@@ -123,18 +137,18 @@
 
             <text x="465" y="73" font-size="18" font-weight="400">Tấm pin</text>
             <text x="465" y="103" font-size="28">
-                <tspan font-weight="800" x-text="fmt(latest?.pv_power, 0)">0</tspan><tspan font-weight="400">W</tspan>
+                <tspan font-weight="800" x-text="fmt(anim('pv_power', latest?.pv_power ?? 0), 0)">0</tspan><tspan font-weight="400">W</tspan>
             </text>
 
             <text x="585" y="73" font-size="13">
                 <tspan font-weight="400">PV1: </tspan>
-                <tspan font-weight="700" x-text="fmt(latest?.pv1_power, 0)">0</tspan><tspan font-weight="400">W </tspan>
+                <tspan font-weight="700" x-text="fmt(anim('pv1_power', latest?.pv1_power ?? 0), 0)">0</tspan><tspan font-weight="400">W </tspan>
                 <tspan font-weight="700" x-text="fmt(latest?.pv1_voltage, 1)">0</tspan><tspan font-weight="400">V </tspan>
                 <tspan font-weight="700" x-text="fmt(latest?.pv1_current, 1)">0</tspan><tspan font-weight="400">A</tspan>
             </text>
             <text x="585" y="93" font-size="13">
                 <tspan font-weight="400">PV2: </tspan>
-                <tspan font-weight="700" x-text="fmt(latest?.pv2_power, 0)">0</tspan><tspan font-weight="400">W </tspan>
+                <tspan font-weight="700" x-text="fmt(anim('pv2_power', latest?.pv2_power ?? 0), 0)">0</tspan><tspan font-weight="400">W </tspan>
                 <tspan font-weight="700" x-text="fmt(latest?.pv2_voltage, 1)">0</tspan><tspan font-weight="400">V </tspan>
                 <tspan font-weight="700" x-text="fmt(latest?.pv2_current, 1)">0</tspan><tspan font-weight="400">A</tspan>
             </text>
@@ -160,7 +174,7 @@
 
             <text x="220" y="128" font-size="18" font-weight="400">AC Couple</text>
             <text x="220" y="156" font-size="28">
-                <tspan font-weight="800" x-text="fmt(latest?.accouple_power, 0)">0</tspan><tspan font-weight="400">W</tspan>
+                <tspan font-weight="800" x-text="fmt(anim('accouple_power', latest?.accouple_power ?? 0), 0)">0</tspan><tspan font-weight="400">W</tspan>
             </text>
 
             <text x="220" y="185" font-size="14">
@@ -200,7 +214,7 @@
 
             <text x="98" y="290" font-size="18" font-weight="400">Lưới điện</text>
             <text x="98" y="318" font-size="28">
-                <tspan font-weight="800" x-text="fmt(Math.max(latest?.export_power ?? 0, latest?.import_power ?? 0), 0)">0</tspan><tspan font-weight="400">W</tspan>
+                <tspan font-weight="800" x-text="fmt(anim('grid_power', Math.max(latest?.export_power ?? 0, latest?.import_power ?? 0)), 0)">0</tspan><tspan font-weight="400">W</tspan>
             </text>
 
             <text x="98" y="350" font-size="15" font-weight="400">Hôm nay</text>
@@ -232,7 +246,7 @@
 
             <text x="220" y="498" font-size="18" font-weight="400">Tải sử dụng</text>
             <text x="220" y="526" font-size="28">
-                <tspan font-weight="800" x-text="fmt((latest?.eps_power > 0 ? 0 : latest?.load_power) ?? 0, 0)">0</tspan><tspan font-weight="400">W</tspan>
+                <tspan font-weight="800" x-text="fmt(anim('load_power', (latest?.eps_power > 0 ? 0 : latest?.load_power) ?? 0), 0)">0</tspan><tspan font-weight="400">W</tspan>
             </text>
 
             <text x="220" y="556" font-size="14">
@@ -249,7 +263,7 @@
 
             <text x="440" y="280" font-size="18" font-weight="400" text-anchor="middle">Biến tần</text>
             <text x="440" y="310" font-size="28" text-anchor="middle">
-                <tspan font-weight="800" x-text="fmt(latest?.inverter_power, 0)">0</tspan><tspan font-weight="400">W</tspan>
+                <tspan font-weight="800" x-text="fmt(anim('inverter_power', latest?.inverter_power ?? 0), 0)">0</tspan><tspan font-weight="400">W</tspan>
             </text>
 
             <text x="364" y="345" font-size="13"><tspan font-weight="400">Bên trong:</tspan></text>
@@ -292,12 +306,12 @@
 
             <text x="677" y="250" font-size="18" font-weight="400">Pin lưu trữ</text>
             <text x="677" y="285" font-size="28">
-                <tspan font-weight="800" x-text="fmt(Math.max(latest?.charge_power ?? 0, latest?.discharge_power ?? 0), 0)">0</tspan><tspan font-weight="400">W </tspan>
+                <tspan font-weight="800" x-text="fmt(anim('battery_power', Math.max(latest?.charge_power ?? 0, latest?.discharge_power ?? 0)), 0)">0</tspan><tspan font-weight="400">W </tspan>
             </text>
 
             <text x="680" y="308" font-size="28">
                 <!-- Dòng pin = Công suất ÷ Điện áp, để luôn khớp với số W hiển thị (raw battery_current bị thiếu hệ số ×10) -->
-                <tspan font-weight="700" font-size="18" x-text="fmt(Math.max(latest?.charge_power ?? 0, latest?.discharge_power ?? 0) / (latest?.battery_voltage || 1), 1)">0</tspan><tspan font-weight="400" font-size="18">A</tspan>
+                <tspan font-weight="700" font-size="18" x-text="fmt(anim('battery_current', Math.max(latest?.charge_power ?? 0, latest?.discharge_power ?? 0) / (latest?.battery_voltage || 1)), 1)">0</tspan><tspan font-weight="400" font-size="18">A</tspan>
             </text>
 
 
@@ -351,7 +365,7 @@
 
             <text x="485" y="558" font-size="18" font-weight="400">Nguồn dự phòng</text>
             <text x="485" y="586" font-size="28">
-                <tspan font-weight="800" x-text="fmt((latest?.eps_power > 0 ? latest?.eps_power : 0) ?? 0, 0)">0</tspan><tspan font-weight="400">W</tspan>
+                <tspan font-weight="800" x-text="fmt(anim('eps_power', (latest?.eps_power > 0 ? latest?.eps_power : 0) ?? 0), 0)">0</tspan><tspan font-weight="400">W</tspan>
             </text>
 
             <text x="485" y="628" font-size="14">

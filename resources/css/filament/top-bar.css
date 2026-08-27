@@ -1,6 +1,9 @@
 nav.fi-topbar {
     padding-inline: calc(var(--spacing) * 8);
 
+    /*@media (min-width: 1024px) {*/
+    /*    min-height: unset;*/
+    /*}*/
     .fi-sidebar-collapse-btn-wrap {
         position: fixed;
         top: 2rem;

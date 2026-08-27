@@ -6,6 +6,7 @@ use App\Filament\Auth\Register;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\Width;
 
 class UserPanelProvider extends AbstractPanelProvider
 {
@@ -22,7 +23,7 @@ class UserPanelProvider extends AbstractPanelProvider
                 'primary' => Color::Emerald,
             ])
             ->pages([
-                Dashboard::class,
+//                Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/User/Widgets'), for: 'App\Filament\User\Widgets')
             ->widgets([]);

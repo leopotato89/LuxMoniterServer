@@ -9,7 +9,7 @@
 <header
     {{
         $attributes->class([
-            'fi-header border-b border-gray-300 px-4 pb-1 justify-end',
+            'fi-header border-b border-gray-300 pb-1 justify-end',
             'fi-header-has-breadcrumbs' => $breadcrumbs,
         ])
     }}
