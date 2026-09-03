@@ -206,10 +206,10 @@
             </g>
 
             <text x="15" y="365" font-size="14">
-                <tspan font-weight="700" x-text="fmt(latest?.gen_voltage, 1)">0</tspan><tspan font-weight="400">Vac</tspan>
+                <tspan font-weight="700" x-text="fmt(latest?.grid_voltage, 1)">0</tspan><tspan font-weight="400">Vac</tspan>
             </text>
             <text x="15" y="383" font-size="14">
-                <tspan font-weight="700" x-text="fmt(latest?.gen_frequency, 1)">0</tspan><tspan font-weight="400">Hz</tspan>
+                <tspan font-weight="700" x-text="fmt(latest?.grid_frequency, 1)">0</tspan><tspan font-weight="400">Hz</tspan>
             </text>
 
             <text x="98" y="290" font-size="18" font-weight="400">Lưới điện</text>
