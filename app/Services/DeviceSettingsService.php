@@ -2,17 +2,12 @@
 
 namespace App\Services;
 
-use App\Filament\Resources\Devices\Schemas\DeviceSetup;
 use App\Models\Device;
 use App\Models\DeviceCommand;
 use App\Models\User;
 use App\Support\InverterSettings;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
-use Filament\Support\Enums\Width;
 use Illuminate\Support\Carbon;
 use RuntimeException;
-use Throwable;
 
 /**
  * Điều phối luồng đọc/ghi cài đặt biến tần qua cloud:
@@ -66,7 +61,8 @@ class DeviceSettingsService
                 $w['bits'] ?? null,
             );
 
-            $audit[] = $device->commands()->create([
+            /** @var DeviceCommand $command */
+            $command = $device->commands()->create([
                 'user_id' => $user?->id,
                 'reg' => $w['reg'],
                 'bit' => $w['bit'] ?? null,
@@ -75,6 +71,7 @@ class DeviceSettingsService
                 'status' => $sent ? 'sent' : 'failed',
                 'error' => $sent ? null : 'Không gửi được MQTT',
             ]);
+            $audit[] = $command;
         }
 
         return $audit;
@@ -110,63 +107,6 @@ class DeviceSettingsService
         ]);
 
         return $sent;
-    }
-
-    /**
-     * Action modal "Cài đặt biến tần" — tự đọc cấu hình khi mở, lưu theo từng field.
-     */
-    public function action(Device $device): Action
-    {
-        return Action::make('deviceSettings')
-        
-            ->label('Cài đặt biến tần')
-            ->icon('heroicon-m-cog-6-tooth')
-            ->modalWidth(Width::ExtraLarge)
-            ->schema(DeviceSetup::settingsSchema(
-                fn (string $key, mixed $value) => $this->saveFieldAndNotify($device, $key, $value)
-            ))
-            ->fillForm(fn (): array => $this->readAndNotify($device))
-            ->modalSubmitActionLabel('Tải lại dữ liệu')
-            // Bấm "Tải lại dữ liệu" → đọc lại cấu hình, giữ modal mở.
-            ->action(function (Action $action) use ($device): void {
-                $action->fillForm($this->readAndNotify($device));
-                $action->halt();
-            });
-    }
-
-    /**
-     * Đọc cấu hình; nếu lỗi thì báo notification và trả mảng rỗng.
-     */
-    private function readAndNotify(Device $device): array
-    {
-        try {
-            return $this->read($device);
-        } catch (Throwable $e) {
-            Notification::make()
-                ->title('Không đọc được cấu hình')
-                ->body($e->getMessage().' Thiết bị có thể đang offline.')
-                ->danger()
-                ->send();
-
-            return [];
-        }
-    }
-
-    /**
-     * Ghi 1 field; báo notification thành công/lỗi.
-     */
-    private function saveFieldAndNotify(Device $device, string $key, mixed $value): void
-    {
-        try {
-            $this->saveField($device, $key, $value, auth()->user());
-            Notification::make()->title('Đã lưu cài đặt')->success()->send();
-        } catch (Throwable $e) {
-            Notification::make()
-                ->title('Lỗi lưu cài đặt')
-                ->body($e->getMessage())
-                ->danger()
-                ->send();
-        }
     }
 
     /**

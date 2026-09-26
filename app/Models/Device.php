@@ -42,6 +42,8 @@ class Device extends Model
 
     /**
      * Chủ sở hữu thiết bị (nullable = chưa được claim).
+     *
+     * @return BelongsTo<User, $this>
      */
     public function owner(): BelongsTo
     {
@@ -50,6 +52,8 @@ class Device extends Model
 
     /**
      * Nhật ký các lệnh cài đặt đã gửi tới thiết bị (audit).
+     *
+     * @return HasMany<DeviceCommand, $this>
      */
     public function commands(): HasMany
     {

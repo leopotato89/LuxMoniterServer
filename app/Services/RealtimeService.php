@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
 
 /**
@@ -10,6 +11,49 @@ use Illuminate\Support\Facades\Redis;
  */
 class RealtimeService
 {
+    public function __construct(
+        private readonly InfluxService $influx,
+    ) {}
+
+    /**
+     * Ảnh chụp trạng thái realtime của thiết bị — nguồn duy nhất cho SPA và mobile.
+     *
+     * @return array{online: bool, latest: array<string, mixed>|null, timestamp: string|null}
+     */
+    public function snapshot(string $serial): array
+    {
+        $latest = $this->latest($serial);
+
+        return [
+            'online' => $this->online($serial),
+            'latest' => $latest,
+            'timestamp' => $this->recordTime($serial, $latest),
+        ];
+    }
+
+    /**
+     * Thời gian của bản ghi realtime đang hiển thị.
+     *
+     * - Nếu worker ghi field `time` (hoặc `timestamp`) trong telemetry Redis → dùng luôn (gốc rễ).
+     * - Nếu không, lấy `_time` mới nhất từ InfluxDB.
+     * - Cuối cùng, fallback server time.
+     *
+     * @param  array<string, mixed>|null  $latest
+     */
+    private function recordTime(string $serial, ?array $latest): ?string
+    {
+        if ($latest) {
+            $raw = $latest['time'] ?? $latest['timestamp'] ?? null;
+
+            if ($raw) {
+                return Carbon::parse($raw)->setTimezone(config('app.timezone'))->format('H:i:s d/m/Y');
+            }
+        }
+
+        return $this->influx->latestTime($serial)?->format('H:i:s d/m/Y')
+            ?? ($latest ? now()->format('H:i:s d/m/Y') : null);
+    }
+
     /**
      * Telemetry JSON mới nhất của thiết bị (hoặc null nếu chưa có).
      *

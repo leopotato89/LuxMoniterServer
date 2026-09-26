@@ -1,9 +1,0 @@
-@import '../../../../vendor/filament/filament/resources/css/theme.css';
-
-@import '../base.css';
-
-@source '../../../../resources/views/filament/**/*';
-@source '../../../../app/Filament/**/*';
-@source '../../../../resources/views/livewire/**/*';
-
-

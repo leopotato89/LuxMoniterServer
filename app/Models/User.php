@@ -4,8 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
+
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,7 +29,7 @@ use Laravel\Sanctum\HasApiTokens;
  */
 #[Fillable(['name', 'email', 'password', 'username', 'is_admin', 'is_active'])]
 #[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -50,34 +49,23 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
-    /**
-     * Xác định user có được vào Filament panel không.
-     * - Panel "user" (path /): mọi user đang hoạt động (admin vào cũng bị hạ xuống quyền user).
-     * - Panel "admin" (path /admin): chỉ admin.
-     */
-    public function canAccessPanel(Panel $panel): bool
-    {
-        if (! $this->is_active) {
-            return false;
-        }
 
-        return match ($panel->getId()) {
-            'admin' => $this->is_admin,
-            'user' => true,
-            default => false,
-        };
-    }
 
     /**
      * User có phải là admin không.
+     *
+     * Ép về bool: model vừa `create()` chưa có attribute `is_admin` trong bộ nhớ
+     * (default của DB chưa được nạp), nên đọc thẳng sẽ ra null và vỡ kiểu trả về.
      */
     public function isAdmin(): bool
     {
-        return $this->is_admin;
+        return (bool) $this->is_admin;
     }
 
     /**
      * Các thiết bị do user này sở hữu.
+     *
+     * @return HasMany<Device, $this>
      */
     public function devices(): HasMany
     {

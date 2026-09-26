@@ -1,11 +1,14 @@
 <?php
 
-use App\Http\Controllers\RealtimeController;
 use Illuminate\Support\Facades\Route;
 
-// Panel user (Filament) đã chiếm đường dẫn gốc "/" — xem app/Providers/Filament/UserPanelProvider.php
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+| SPA (Vue) sở hữu mọi đường dẫn, TRỪ /api (để đường dẫn API sai vẫn trả 404 JSON)
+| và /up (health check). Không loại trừ thì catch-all sẽ nuốt các URL API gõ sai
+| và trả về HTML kèm 200 — client sẽ tưởng request thành công.
+*/
 
-// Endpoint realtime cho panel admin (session auth) — trả JSON để Alpine cập nhật số liệu.
-Route::get('/admin/devices/{device:serial}/realtime', [RealtimeController::class, 'show'])
-    ->middleware('auth');
-
+Route::view('/{any?}', 'app')->where('any', '^(?!api\b|up$).*');

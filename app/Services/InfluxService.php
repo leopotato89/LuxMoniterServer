@@ -66,7 +66,7 @@ class InfluxService
      */
     public function dashboard(string $serial, string $start, string $stop, string $window): array
     {
-        $fields = ['battery_soc', 'pv_power', 'load_power', 'charge_power', 'discharge_power', 'export_power', 'import_power'];
+        $fields = ['battery_soc', 'pv_power', 'accouple_power', 'load_power', 'charge_power', 'discharge_power', 'export_power', 'import_power'];
 
         $flux = sprintf(
             'from(bucket: "%s")
@@ -78,7 +78,7 @@ class InfluxService
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
   |> map(fn: (r) => ({ r with
       soc: if exists r.battery_soc then r.battery_soc else 0.0,
-      pv: if exists r.pv_power then r.pv_power else 0.0,
+      pv: (if exists r.pv_power then r.pv_power else 0.0) + (if exists r.accouple_power then r.accouple_power else 0.0),
       load: if exists r.load_power then r.load_power else 0.0,
       charge_net: (if exists r.charge_power then r.charge_power else 0.0) - (if exists r.discharge_power then r.discharge_power else 0.0),
       grid_net: (if exists r.export_power then r.export_power else 0.0) - (if exists r.import_power then r.import_power else 0.0),
@@ -197,6 +197,86 @@ class InfluxService
     }
 
     /**
+     * Tổng điện năng theo tháng (dành cho chế độ xem Năm).
+     *
+     * @return array<string, array<string, float>> keyed by 'Y-m'
+     */
+    public function monthlyEnergy(string $serial, string $start, string $stop): array
+    {
+        $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
+
+        $flux = sprintf(
+            'from(bucket: "%s")
+  |> range(start: %s, stop: %s)
+  |> filter(fn: (r) => r._measurement == "inverter")
+  |> filter(fn: (r) => r.device == "%s")
+  |> filter(fn: (r) => %s)
+  |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
+  |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false)
+  |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
+            config('influx.bucket'),
+            $start,
+            $stop,
+            $serial,
+            implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
+        );
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Token '.config('influx.token'),
+            'Accept' => 'application/csv',
+        ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
+            'query' => $flux,
+            'type' => 'flux',
+        ]);
+
+        if (! $response->successful()) {
+            return [];
+        }
+
+        return $this->parseEnergyCsvWithFormat($response->body(), $fields, 'Y-m');
+    }
+
+    /**
+     * Tổng điện năng theo năm (dành cho chế độ xem Tất cả).
+     *
+     * @return array<string, array<string, float>> keyed by 'Y'
+     */
+    public function yearlyEnergy(string $serial, string $start = '2020-01-01T00:00:00Z', string $stop = 'now()'): array
+    {
+        $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
+
+        $flux = sprintf(
+            'from(bucket: "%s")
+  |> range(start: %s, stop: %s)
+  |> filter(fn: (r) => r._measurement == "inverter")
+  |> filter(fn: (r) => r.device == "%s")
+  |> filter(fn: (r) => %s)
+  |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
+  |> aggregateWindow(every: 1y, fn: sum, createEmpty: false)
+  |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
+            config('influx.bucket'),
+            $start,
+            $stop,
+            $serial,
+            implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
+        );
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Token '.config('influx.token'),
+            'Accept' => 'application/csv',
+        ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
+            'query' => $flux,
+            'type' => 'flux',
+        ]);
+
+        if (! $response->successful()) {
+            return [];
+        }
+
+        return $this->parseEnergyCsvWithFormat($response->body(), $fields, 'Y');
+    }
+
+    /**
      * Thời gian của bản ghi MỚI NHẤT của thiết bị (lấy từ cột _time của InfluxDB).
      */
     public function latestTime(string $serial, string $range = '-3h'): ?Carbon
@@ -290,6 +370,61 @@ class InfluxService
             $day = Carbon::parse($time)->setTimezone(config('app.timezone'))->format('Y-m-d');
 
             foreach ($fields as $f) {
+                $lastByDay[$day][$f] = (float) ($cols[$header[$f]] ?? 0);
+            }
+        }
+
+        $days = [];
+
+        foreach ($lastByDay as $day => $row) {
+            $days[$day] = [
+                'pv' => (float) ($row['pv_energy_day'] ?? 0),
+                'accouple' => (float) ($row['accouple_energy_day'] ?? 0),
+                'charge' => (float) ($row['charge_energy_day'] ?? 0),
+                'discharge' => (float) ($row['discharge_energy_day'] ?? 0),
+                'load' => (float) ($row['load_energy_day'] ?? 0),
+                'import' => (float) ($row['import_energy_day'] ?? 0),
+                'export' => (float) ($row['export_energy_day'] ?? 0),
+            ];
+        }
+
+        return $days;
+    }
+
+    /**
+     * Parse CSV pivoted (cột _time + các field *_energy_day) thành mảng với định dạng thời gian chỉ định.
+     */
+    protected function parseEnergyCsvWithFormat(string $csv, array $fields, string $format = 'Y-m'): array
+    {
+        $header = null;
+        $lastByDay = [];
+
+        foreach (preg_split('/\r?\n/', trim($csv)) ?: [] as $line) {
+            if ($line === '' || str_starts_with($line, '#')) {
+                continue;
+            }
+
+            $cols = str_getcsv($line);
+
+            if ($header === null) {
+                $header = array_flip($cols);
+
+                continue;
+            }
+
+            $time = $cols[$header['_time']] ?? null;
+
+            if ($time === null || $time === '') {
+                continue;
+            }
+
+            $day = Carbon::parse($time)->setTimezone(config('app.timezone'))->format($format);
+
+            foreach ($fields as $f) {
+                if (! isset($cols[$header[$f]]) || $cols[$header[$f]] === '') {
+                    continue;
+                }
+
                 $lastByDay[$day][$f] = (float) ($cols[$header[$f]] ?? 0);
             }
         }

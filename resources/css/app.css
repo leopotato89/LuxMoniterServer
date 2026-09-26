@@ -1,8 +1,164 @@
 @import 'tailwindcss';
 
 @source '../views';
+@source '../js';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+/*
+|--------------------------------------------------------------------------
+| Theme — đo trực tiếp từ 9router.com
+|--------------------------------------------------------------------------
+| Cơ chế giống hệt: class "dark" trên <html> (mặc định là dark).
+| Mỗi chế độ có bảng biến riêng; `@theme inline` khiến utility của Tailwind
+| phát ra `var(--...)` nên chỉ cần một bộ class dùng cho cả 2 chế độ.
+*/
+:root {
+    color-scheme: light;
+
+    --bg: #fcfbf9;
+    --bg-rgb: 252 251 249;
+    --surface: #ffffff;
+    --surface-2: #f4f4f5;
+    --bord: #e5e7eb;
+    --bord-subtle: #f1f1f3;
+    --text-main: #0a0a0a;
+    --muted: #6b7280;
+    --subtle: #9ca3af;
+
+    --accent: #e68a6e;
+    --accent-hover: #db7a5c;
+    --accent-soft: #fdf0ec;
+    --accent-rgb: 230 138 110;
+
+    --ok: #15803d;
+    --danger: #dc2626;
+    --grid-color: rgb(230 138 110 / 0.35);
+    --shadow-soft: 0 2px 12px -2px rgba(10, 10, 10, 0.26);
+
+    /* Sơ đồ năng lượng — SVG dùng màu cứng nên cần bảng biến riêng */
+    --diagram-ink: #0f172a;
+    --diagram-paper: #ffffff;
+    --diagram-screen: #f8fafc;
+    --diagram-line: #e2e8f0;
+}
+
+.dark {
+    color-scheme: dark;
+
+    --bg: #1a1a1a;
+    --bg-rgb: 26 26 26;
+    --surface: #262626;
+    --surface-2: #303030;
+    --bord: #333333;
+    --bord-subtle: #2a2a2a;
+    --text-main: #ededed;
+    --muted: #9ca3af;
+    --subtle: #6b7280;
+
+    --accent: #e56a4a;
+    --accent-hover: #d4553a;
+    --accent-soft: #3a2723;
+    --accent-rgb: 229 106 74;
+
+    --ok: #4ade80;
+    --danger: #f87171;
+    --grid-color: rgb(229 106 74 / 0.14);
+    --shadow-soft: 0 2px 12px -2px rgb(0 0 0 / 0.35);
+
+    --diagram-ink: #e5e7eb;
+    --diagram-paper: #1f1f1f;
+    --diagram-screen: #2a2a2a;
+    --diagram-line: #3a3a3a;
+}
+
+@theme inline {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* Bề mặt */
+    --color-page: var(--bg);
+    --color-surface: var(--surface);
+    --color-surface-alt: var(--surface-2);
+    --color-line: var(--bord);
+    --color-line-subtle: var(--bord-subtle);
+    --color-line-strong: var(--subtle);
+
+    /* Chữ */
+    --color-ink: var(--text-main);
+    --color-muted: var(--muted);
+
+    /* Accent */
+    --color-brand: var(--accent);
+    --color-brand-strong: var(--accent-hover);
+    --color-brand-soft: var(--accent-soft);
+
+    /* Trạng thái */
+    --color-ok: var(--ok);
+    --color-danger: var(--danger);
+
+    /* Bo góc + đổ bóng */
+    --radius-card: 1rem;
+    --radius-field: 0.75rem;
+    --shadow-card: var(--shadow-soft);
+    --shadow-brand: 0 2px 12px -2px rgb(var(--accent-rgb) / 0.4);
+}
+
+@layer components {
+
+    /* Lưới 40px màu accent — hoạ tiết nền đặc trưng của 9router */
+    .bg-grid {
+        background-image:
+            linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+            linear-gradient(var(--grid-color) 1px, transparent 1px);
+        background-size: 40px 40px, 40px 40px;
+    }
+
+    /* Làm mờ lưới ở rìa để nội dung nổi lên */
+    .vignette::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image: radial-gradient(transparent 50%, rgb(var(--bg-rgb) / 0.85) 100%);
+    }
+
+    /* Thanh điều hướng kính mờ */
+    .glass-bar {
+        background-color: rgb(var(--bg-rgb) / 0.72);
+        backdrop-filter: blur(24px);
+    }
+
+    /* Ô nhập liệu dùng chung (input/select/textarea) */
+    .field {
+        width: 100%;
+        border-radius: var(--radius-field);
+        border: 1px solid var(--bord);
+        background-color: var(--surface);
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        color: var(--text-main);
+        outline: none;
+        transition: border-color 0.15s, box-shadow 0.15s;
+
+        select& {
+            appearance: none;
+            padding-right: 1.4rem;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.2rem center;
+            background-repeat: no-repeat;
+            background-size: 1.25em 1.25em;
+        }
+    }
+
+    .field:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.18);
+    }
+
+    .field::placeholder {
+        color: var(--muted);
+    }
+
+    .x-rounded-card {
+        @apply rounded-card border border-line bg-surface/70 shadow-card p-4 md:p-6;
+    }
 }

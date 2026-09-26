@@ -23,7 +23,34 @@ class InverterSettings
     {
         return [
             [
+                'title' => 'Sạc AC',
+                'icon' => 'IconPlug',
+                'items' => [
+                    ['type' => 'quickcharge', 'reg' => 234, 'label' => 'Sạc cưỡng bức', 'unit' => 'phút', 'min' => 1, 'max' => 60],
+                    ['type' => 'select', 'reg' => 120, 'bit' => 1, 'bits' => 3, 'label' => 'Kiểu sạc AC', 'options' => [0 => 'Tắt', 1 => 'Theo giờ', 2 => 'Theo điện áp', 3 => 'Theo SOC', 4 => 'Theo áp + giờ', 5 => 'Theo SOC + giờ']],
+                    ['type' => 'number', 'reg' => 160, 'label' => 'SOC bắt đầu sạc AC', 'unit' => '%', 'min' => 0, 'max' => 90, 'showAc' => [3, 5]],
+                    ['type' => 'number', 'reg' => 161, 'label' => 'SOC kết thúc sạc AC', 'unit' => '%', 'min' => 0, 'max' => 100, 'showAc' => [3, 5]],
+                    ['type' => 'number', 'reg' => 158, 'label' => 'Điện áp bắt đầu sạc AC', 'unit' => 'V', 'min' => 38.5, 'max' => 52.0, 'scale' => 10, 'showAc' => [2, 4]],
+                    ['type' => 'number', 'reg' => 159, 'label' => 'Điện áp kết thúc sạc AC', 'unit' => 'V', 'min' => 48.0, 'max' => 59.0, 'scale' => 10, 'showAc' => [2, 4]],
+                    ['type' => 'timerange', 'label' => 'Khung giờ 1', 'start' => 68, 'end' => 69, 'showAc' => [1, 4, 5]],
+                    ['type' => 'timerange', 'label' => 'Khung giờ 2', 'start' => 70, 'end' => 71, 'showAc' => [1, 4, 5]],
+                    ['type' => 'timerange', 'label' => 'Khung giờ 3', 'start' => 72, 'end' => 73, 'showAc' => [1, 4, 5]],
+                ],
+            ],
+
+            [
+                'title' => 'Hybrid',
+                'icon' => 'IconCpu',
+                'items' => [
+                    ['type' => 'switch', 'reg' => 110, 'bit' => 10, 'label' => 'Chế độ Hybrid (đo tổng tải cả nhà)'],
+                    ['type' => 'switch', 'reg' => 21, 'bit' => 15, 'label' => 'Bán điện lên lưới'],
+                    ['type' => 'number', 'reg' => 103, 'label' => 'Công suất đẩy lưới tối đa', 'unit' => '%', 'min' => 0, 'max' => 100, 'showIf' => 'gridExport'],
+                ],
+            ],
+
+            [
                 'title' => 'Pin lưu trữ',
+                'icon' => 'IconBattery4',
                 'tabs' => [
                     [
                         'name' => 'Sạc',
@@ -55,30 +82,10 @@ class InverterSettings
                     ],
                 ],
             ],
-            [
-                'title' => 'Sạc AC',
-                'items' => [
-                    ['type' => 'quickcharge', 'reg' => 234, 'label' => 'Sạc cưỡng bức (phút)'],
-                    ['type' => 'select', 'reg' => 120, 'bit' => 1, 'bits' => 3, 'label' => 'Kiểu sạc AC', 'options' => [0 => 'Tắt', 1 => 'Theo giờ', 2 => 'Theo điện áp', 3 => 'Theo SOC', 4 => 'Theo áp + giờ', 5 => 'Theo SOC + giờ']],
-                    ['type' => 'number', 'reg' => 160, 'label' => 'SOC bắt đầu sạc AC', 'unit' => '%', 'min' => 0, 'max' => 90, 'showAc' => [3, 5]],
-                    ['type' => 'number', 'reg' => 161, 'label' => 'SOC kết thúc sạc AC', 'unit' => '%', 'min' => 0, 'max' => 100, 'showAc' => [3, 5]],
-                    ['type' => 'number', 'reg' => 158, 'label' => 'Điện áp bắt đầu sạc AC', 'unit' => 'V', 'min' => 38.5, 'max' => 52.0, 'scale' => 10, 'showAc' => [2, 4]],
-                    ['type' => 'number', 'reg' => 159, 'label' => 'Điện áp kết thúc sạc AC', 'unit' => 'V', 'min' => 48.0, 'max' => 59.0, 'scale' => 10, 'showAc' => [2, 4]],
-                    ['type' => 'timerange', 'label' => 'Khung giờ 1', 'start' => 68, 'end' => 69, 'showAc' => [1, 4, 5]],
-                    ['type' => 'timerange', 'label' => 'Khung giờ 2', 'start' => 70, 'end' => 71, 'showAc' => [1, 4, 5]],
-                    ['type' => 'timerange', 'label' => 'Khung giờ 3', 'start' => 72, 'end' => 73, 'showAc' => [1, 4, 5]],
-                ],
-            ],
-            [
-                'title' => 'Cài đặt Hybrid',
-                'items' => [
-                    ['type' => 'switch', 'reg' => 110, 'bit' => 10, 'label' => 'Chế độ Hybrid (đo tổng tải cả nhà)'],
-                    ['type' => 'switch', 'reg' => 21, 'bit' => 15, 'label' => 'Bán điện lên lưới (Grid Export)'],
-                    ['type' => 'number', 'reg' => 103, 'label' => 'Công suất đẩy lưới tối đa', 'unit' => '%', 'min' => 0, 'max' => 100, 'showIf' => 'gridExport'],
-                ],
-            ],
+
             [
                 'title' => 'AC Coupling',
+                'icon' => 'IconAcCoupling',
                 'items' => [
                     ['type' => 'switch', 'reg' => 179, 'bit' => 11, 'label' => 'Bật AC Coupling'],
                     ['type' => 'select', 'reg' => 120, 'bit' => 7, 'bits' => 1, 'label' => 'Kiểu điều khiển (theo điện áp/SOC)', 'options' => [0 => 'Theo điện áp', 1 => 'Theo SOC']],
@@ -90,6 +97,7 @@ class InverterSettings
             ],
             [
                 'title' => 'Ắc quy chì-axit',
+                'icon' => 'IconLeadAcidBattery',
                 'items' => [
                     ['type' => 'number', 'reg' => 99, 'label' => 'Điện áp sạc cưỡng bức', 'unit' => 'V', 'min' => 50.0, 'max' => 59.0, 'scale' => 10],
                     ['type' => 'number', 'reg' => 204, 'label' => 'Dung lượng chì-axit', 'unit' => 'Ah', 'min' => 50, 'max' => 5000],
@@ -116,6 +124,60 @@ class InverterSettings
         }
 
         return $out;
+    }
+
+    /**
+     * Schema cho Vue SPA.
+     *
+     * @return array<int, mixed>
+     */
+    public static function clientSchema(): array
+    {
+        $schema = [];
+
+        foreach (self::sections() as $sec) {
+            $clientSec = [
+                'title' => $sec['title'],
+                'icon' => $sec['icon'] ?? 'IconSettings',
+            ];
+
+            if (isset($sec['tabs'])) {
+                $clientSec['tabs'] = [];
+                foreach ($sec['tabs'] as $tab) {
+                    $clientTab = ['name' => $tab['name'], 'items' => []];
+                    foreach ($tab['items'] as $it) {
+                        $clientTab['items'] = array_merge($clientTab['items'], self::clientSchemaFields($it));
+                    }
+                    $clientSec['tabs'][] = $clientTab;
+                }
+            } elseif (isset($sec['items'])) {
+                $clientSec['items'] = [];
+                foreach ($sec['items'] as $it) {
+                    $clientSec['items'] = array_merge($clientSec['items'], self::clientSchemaFields($it));
+                }
+            }
+
+            $schema[] = $clientSec;
+        }
+
+        return $schema;
+    }
+
+    private static function clientSchemaFields(array $it): array
+    {
+        $fields = [];
+        self::addFields($fields, $it);
+
+        $clientFields = [];
+        foreach ($fields as $key => $field) {
+            $clientField = array_intersect_key($field, array_flip([
+                'type', 'label', 'options', 'min', 'max', 'unit', 'showIf', 'show', 'showAc', 'showGen',
+            ]));
+            $clientField['key'] = $key;
+            $clientFields[] = $clientField;
+        }
+
+        return $clientFields;
     }
 
     /**
