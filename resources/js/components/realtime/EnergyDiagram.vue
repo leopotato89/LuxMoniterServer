@@ -491,7 +491,7 @@ function rssiLabel(value) {
         display: block;
         width: 100%;
         height: auto;
-        max-height: 70vh;
+        max-height: 55vh;
     }
 
 

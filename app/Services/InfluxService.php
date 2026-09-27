@@ -22,36 +22,38 @@ class InfluxService
         string $stop = 'now()',
         string $window = '1m',
     ): array {
-        $flux = sprintf(
-            'from(bucket: "%s")
-  |> range(start: %s, stop: %s)
-  |> filter(fn: (r) => r._measurement == "inverter")
-  |> filter(fn: (r) => r._field == "%s")
-  |> filter(fn: (r) => r.device == "%s")
-  |> aggregateWindow(every: %s, fn: mean, createEmpty: false)
-  |> keep(columns: ["_time", "_value"])
-  |> sort(columns: ["_time"])',
-            config('influx.bucket'),
-            $start,
-            $stop,
-            $field,
-            $serial,
-            $window,
-        );
+        return \Illuminate\Support\Facades\Cache::remember("influx_history_{$serial}_{$field}_{$start}_{$stop}_{$window}", 60, function () use ($serial, $field, $start, $stop, $window) {
+            $flux = sprintf(
+                'from(bucket: "%s")
+      |> range(start: %s, stop: %s)
+      |> filter(fn: (r) => r._measurement == "inverter")
+      |> filter(fn: (r) => r._field == "%s")
+      |> filter(fn: (r) => r.device == "%s")
+      |> aggregateWindow(every: %s, fn: mean, createEmpty: false)
+      |> keep(columns: ["_time", "_value"])
+      |> sort(columns: ["_time"])',
+                config('influx.bucket'),
+                $start,
+                $stop,
+                $field,
+                $serial,
+                $window,
+            );
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Token '.config('influx.token'),
-            'Accept' => 'application/csv',
-        ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
-            'query' => $flux,
-            'type' => 'flux',
-        ]);
+            $response = Http::withHeaders([
+                'Authorization' => 'Token '.config('influx.token'),
+                'Accept' => 'application/csv',
+            ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
+                'query' => $flux,
+                'type' => 'flux',
+            ]);
 
-        if (! $response->successful()) {
-            return [];
-        }
+            if (! $response->successful()) {
+                return [];
+            }
 
-        return $this->parseAnnotatedCsv($response->body());
+            return $this->parseAnnotatedCsv($response->body());
+        });
     }
 
     /**
@@ -66,48 +68,50 @@ class InfluxService
      */
     public function dashboard(string $serial, string $start, string $stop, string $window): array
     {
-        $fields = ['battery_soc', 'pv_power', 'accouple_power', 'load_power', 'charge_power', 'discharge_power', 'export_power', 'import_power'];
+        return \Illuminate\Support\Facades\Cache::remember("influx_dashboard_{$serial}_{$start}_{$stop}_{$window}", 60, function () use ($serial, $start, $stop, $window) {
+            $fields = ['battery_soc', 'pv_power', 'accouple_power', 'load_power', 'charge_power', 'discharge_power', 'export_power', 'import_power'];
 
-        $flux = sprintf(
-            'from(bucket: "%s")
-  |> range(start: %s, stop: %s)
-  |> filter(fn: (r) => r._measurement == "inverter")
-  |> filter(fn: (r) => r.device == "%s")
-  |> filter(fn: (r) => %s)
-  |> aggregateWindow(every: %s, fn: mean, createEmpty: false)
-  |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
-  |> map(fn: (r) => ({ r with
-      soc: if exists r.battery_soc then r.battery_soc else 0.0,
-      pv: (if exists r.pv_power then r.pv_power else 0.0) + (if exists r.accouple_power then r.accouple_power else 0.0),
-      load: if exists r.load_power then r.load_power else 0.0,
-      charge_net: (if exists r.charge_power then r.charge_power else 0.0) - (if exists r.discharge_power then r.discharge_power else 0.0),
-      grid_net: (if exists r.export_power then r.export_power else 0.0) - (if exists r.import_power then r.import_power else 0.0),
-      export_power: if exists r.export_power then r.export_power else 0.0,
-      import_power: if exists r.import_power then r.import_power else 0.0
-  }))
-  |> keep(columns: ["_time", "soc", "pv", "load", "charge_net", "grid_net", "export_power", "import_power"])
-  |> sort(columns: ["_time"])',
-            config('influx.bucket'),
-            $start,
-            $stop,
-            $serial,
-            implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
-            $window,
-        );
+            $flux = sprintf(
+                'from(bucket: "%s")
+      |> range(start: %s, stop: %s)
+      |> filter(fn: (r) => r._measurement == "inverter")
+      |> filter(fn: (r) => r.device == "%s")
+      |> filter(fn: (r) => %s)
+      |> aggregateWindow(every: %s, fn: mean, createEmpty: false)
+      |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> map(fn: (r) => ({ r with
+          soc: if exists r.battery_soc then r.battery_soc else 0.0,
+          pv: (if exists r.pv_power then r.pv_power else 0.0) + (if exists r.accouple_power then r.accouple_power else 0.0),
+          load: if exists r.load_power then r.load_power else 0.0,
+          charge_net: (if exists r.charge_power then r.charge_power else 0.0) - (if exists r.discharge_power then r.discharge_power else 0.0),
+          grid_net: (if exists r.export_power then r.export_power else 0.0) - (if exists r.import_power then r.import_power else 0.0),
+          export_power: if exists r.export_power then r.export_power else 0.0,
+          import_power: if exists r.import_power then r.import_power else 0.0
+      }))
+      |> keep(columns: ["_time", "soc", "pv", "load", "charge_net", "grid_net", "export_power", "import_power"])
+      |> sort(columns: ["_time"])',
+                config('influx.bucket'),
+                $start,
+                $stop,
+                $serial,
+                implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
+                $window,
+            );
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Token '.config('influx.token'),
-            'Accept' => 'application/csv',
-        ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
-            'query' => $flux,
-            'type' => 'flux',
-        ]);
+            $response = Http::withHeaders([
+                'Authorization' => 'Token '.config('influx.token'),
+                'Accept' => 'application/csv',
+            ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
+                'query' => $flux,
+                'type' => 'flux',
+            ]);
 
-        if (! $response->successful()) {
-            return ['labels' => [], 'series' => ['soc' => [], 'pv' => [], 'load' => [], 'charge_net' => [], 'grid_net' => [], 'export_power' => [], 'import_power' => []]];
-        }
+            if (! $response->successful()) {
+                return ['labels' => [], 'series' => ['soc' => [], 'pv' => [], 'load' => [], 'charge_net' => [], 'grid_net' => [], 'export_power' => [], 'import_power' => []]];
+            }
 
-        return $this->parseDashboardCsv($response->body());
+            return $this->parseDashboardCsv($response->body());
+        });
     }
 
     /**
@@ -118,35 +122,37 @@ class InfluxService
      */
     public function daily(string $serial, string $date): array
     {
-        $start = Carbon::parse($date, config('app.timezone'))->startOfDay();
-        $stop = (clone $start)->addDay();
+        return \Illuminate\Support\Facades\Cache::remember("influx_daily_{$serial}_{$date}", 60, function () use ($serial, $date) {
+            $start = Carbon::parse($date, config('app.timezone'))->startOfDay();
+            $stop = (clone $start)->addDay();
 
-        $flux = sprintf(
-            'from(bucket: "%s")
-  |> range(start: %s, stop: %s)
-  |> filter(fn: (r) => r._measurement == "inverter")
-  |> filter(fn: (r) => r.device == "%s")
-  |> last()
-  |> keep(columns: ["_field", "_value"])',
-            config('influx.bucket'),
-            $start->copy()->setTimezone('UTC')->toIso8601ZuluString(),
-            $stop->copy()->setTimezone('UTC')->toIso8601ZuluString(),
-            $serial,
-        );
+            $flux = sprintf(
+                'from(bucket: "%s")
+      |> range(start: %s, stop: %s)
+      |> filter(fn: (r) => r._measurement == "inverter")
+      |> filter(fn: (r) => r.device == "%s")
+      |> last()
+      |> keep(columns: ["_field", "_value"])',
+                config('influx.bucket'),
+                $start->copy()->setTimezone('UTC')->toIso8601ZuluString(),
+                $stop->copy()->setTimezone('UTC')->toIso8601ZuluString(),
+                $serial,
+            );
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Token '.config('influx.token'),
-            'Accept' => 'application/csv',
-        ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
-            'query' => $flux,
-            'type' => 'flux',
-        ]);
+            $response = Http::withHeaders([
+                'Authorization' => 'Token '.config('influx.token'),
+                'Accept' => 'application/csv',
+            ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
+                'query' => $flux,
+                'type' => 'flux',
+            ]);
 
-        if (! $response->successful()) {
-            return [];
-        }
+            if (! $response->successful()) {
+                return [];
+            }
 
-        return $this->parseFieldValueCsv($response->body());
+            return $this->parseFieldValueCsv($response->body());
+        });
     }
 
     /**
@@ -159,41 +165,43 @@ class InfluxService
      */
     public function dailyEnergy(string $serial, string $start, string $stop): array
     {
-        $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
+        return \Illuminate\Support\Facades\Cache::remember("influx_dailyEnergy_{$serial}_{$start}_{$stop}", 300, function () use ($serial, $start, $stop) {
+            $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
+            $timezone = config('app.timezone');
 
-        // KHÔNG dùng aggregateWindow(location) vì nó căn cửa sổ 1 ngày không khớp
-        // nửa đêm giờ địa phương (lệch/đổi ngày). Truy vấn dữ liệu thô đã pivot rồi
-        // nhóm theo ngày địa phương trong PHP, lấy giá trị CUỐI mỗi ngày.
-        $flux = sprintf(
-            'from(bucket: "%s")
+            $flux = sprintf(
+                'import "timezone"
+option location = timezone.location(name: "%s")
+
+from(bucket: "%s")
   |> range(start: %s, stop: %s)
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
   |> filter(fn: (r) => %s)
-  |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
-  |> keep(columns: ["_time", %s])
-  |> sort(columns: ["_time"])',
-            config('influx.bucket'),
-            $start,
-            $stop,
-            $serial,
-            implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
-            implode(', ', array_map(fn (string $f): string => '"'.$f.'"', $fields)),
-        );
+  |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
+  |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
+                $timezone,
+                config('influx.bucket'),
+                $start,
+                $stop,
+                $serial,
+                implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
+            );
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Token '.config('influx.token'),
-            'Accept' => 'application/csv',
-        ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
-            'query' => $flux,
-            'type' => 'flux',
-        ]);
+            $response = Http::withHeaders([
+                'Authorization' => 'Token '.config('influx.token'),
+                'Accept' => 'application/csv',
+            ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
+                'query' => $flux,
+                'type' => 'flux',
+            ]);
 
-        if (! $response->successful()) {
-            return [];
-        }
+            if (! $response->successful()) {
+                return [];
+            }
 
-        return $this->parseDailyEnergyCsv($response->body(), $fields);
+            return $this->parseDailyEnergyCsv($response->body(), $fields);
+        });
     }
 
     /**
@@ -203,10 +211,15 @@ class InfluxService
      */
     public function monthlyEnergy(string $serial, string $start, string $stop): array
     {
-        $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
+        return \Illuminate\Support\Facades\Cache::remember("influx_monthlyEnergy_{$serial}_{$start}_{$stop}", 3600, function () use ($serial, $start, $stop) {
+            $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
+            $timezone = config('app.timezone');
 
-        $flux = sprintf(
-            'from(bucket: "%s")
+            $flux = sprintf(
+                'import "timezone"
+option location = timezone.location(name: "%s")
+
+from(bucket: "%s")
   |> range(start: %s, stop: %s)
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
@@ -214,26 +227,28 @@ class InfluxService
   |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
   |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false)
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
-            config('influx.bucket'),
-            $start,
-            $stop,
-            $serial,
-            implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
-        );
+                $timezone,
+                config('influx.bucket'),
+                $start,
+                $stop,
+                $serial,
+                implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
+            );
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Token '.config('influx.token'),
-            'Accept' => 'application/csv',
-        ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
-            'query' => $flux,
-            'type' => 'flux',
-        ]);
+            $response = Http::withHeaders([
+                'Authorization' => 'Token '.config('influx.token'),
+                'Accept' => 'application/csv',
+            ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
+                'query' => $flux,
+                'type' => 'flux',
+            ]);
 
-        if (! $response->successful()) {
-            return [];
-        }
+            if (! $response->successful()) {
+                return [];
+            }
 
-        return $this->parseEnergyCsvWithFormat($response->body(), $fields, 'Y-m');
+            return $this->parseEnergyCsvWithFormat($response->body(), $fields, 'Y-m');
+        });
     }
 
     /**
@@ -243,10 +258,15 @@ class InfluxService
      */
     public function yearlyEnergy(string $serial, string $start = '2020-01-01T00:00:00Z', string $stop = 'now()'): array
     {
-        $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
+        return \Illuminate\Support\Facades\Cache::remember("influx_yearlyEnergy_{$serial}_{$start}_{$stop}", 3600, function () use ($serial, $start, $stop) {
+            $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
+            $timezone = config('app.timezone');
 
-        $flux = sprintf(
-            'from(bucket: "%s")
+            $flux = sprintf(
+                'import "timezone"
+option location = timezone.location(name: "%s")
+
+from(bucket: "%s")
   |> range(start: %s, stop: %s)
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
@@ -254,26 +274,28 @@ class InfluxService
   |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
   |> aggregateWindow(every: 1y, fn: sum, createEmpty: false)
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
-            config('influx.bucket'),
-            $start,
-            $stop,
-            $serial,
-            implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
-        );
+                $timezone,
+                config('influx.bucket'),
+                $start,
+                $stop,
+                $serial,
+                implode(' or ', array_map(fn (string $f): string => 'r._field == "'.$f.'"', $fields)),
+            );
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Token '.config('influx.token'),
-            'Accept' => 'application/csv',
-        ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
-            'query' => $flux,
-            'type' => 'flux',
-        ]);
+            $response = Http::withHeaders([
+                'Authorization' => 'Token '.config('influx.token'),
+                'Accept' => 'application/csv',
+            ])->asJson()->post(config('influx.url').'/api/v2/query?org='.urlencode(config('influx.org')), [
+                'query' => $flux,
+                'type' => 'flux',
+            ]);
 
-        if (! $response->successful()) {
-            return [];
-        }
+            if (! $response->successful()) {
+                return [];
+            }
 
-        return $this->parseEnergyCsvWithFormat($response->body(), $fields, 'Y');
+            return $this->parseEnergyCsvWithFormat($response->body(), $fields, 'Y');
+        });
     }
 
     /**

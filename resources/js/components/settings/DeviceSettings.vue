@@ -103,7 +103,7 @@ function pollResult(jobId) {
                 clearInterval(interval);
                 values.value = { ...values.value, ...data.values };
                 syncQuickChargeState();
-                toast.success('Đã đọc dữ liệu từ thiết bị');
+                //toast.success('Đã đọc dữ liệu từ thiết bị');
                 reading.value = false;
             } else if (data.status === 'error') {
                 clearInterval(interval);
