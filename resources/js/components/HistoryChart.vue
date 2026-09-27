@@ -11,7 +11,7 @@ import {
     Legend, 
     Filler 
 } from 'chart.js'
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import api from '../lib/api'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
@@ -41,6 +41,7 @@ const props = defineProps({
 
 const loading = ref(true)
 const chartData = ref({ labels: [], datasets: [] })
+const chartRef = ref(null)
 const chartOptions = ref({
   responsive: true,
   maintainAspectRatio: false,
@@ -112,8 +113,26 @@ async function fetchData() {
     }
 }
 
+const handleOutsideClick = (e) => {
+    if (e.target.tagName !== 'CANVAS' && chartRef.value && chartRef.value.chart) {
+        const chart = chartRef.value.chart;
+        chart.setActiveElements([]);
+        if (chart.tooltip) {
+            chart.tooltip.setActiveElements([], {x: 0, y: 0});
+        }
+        chart.update();
+    }
+}
+
 onMounted(() => {
+    document.addEventListener('touchstart', handleOutsideClick);
+    document.addEventListener('mousedown', handleOutsideClick);
     fetchData();
+});
+
+onUnmounted(() => {
+    document.removeEventListener('touchstart', handleOutsideClick);
+    document.removeEventListener('mousedown', handleOutsideClick);
 });
 
 watch(() => props.field, () => {
@@ -134,7 +153,7 @@ watch(() => props.params, () => {
         </svg>
         Đang tải dữ liệu...
     </div>
-    <Line v-if="chartData.labels.length > 0" :data="chartData" :options="chartOptions" />
+    <Line ref="chartRef" v-if="chartData.labels.length > 0" :data="chartData" :options="chartOptions" />
     <div v-else-if="!loading" class="absolute inset-0 flex items-center justify-center text-sm text-muted">
         Không có dữ liệu trong 24h qua.
     </div>

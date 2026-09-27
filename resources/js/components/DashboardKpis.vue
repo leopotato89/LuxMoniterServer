@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import api from '../lib/api'
 import { Pie } from 'vue-chartjs'
 import { Chart as ChartJS, ArcElement, Tooltip } from 'chart.js'
@@ -45,7 +45,26 @@ async function fetchKpis() {
 }
 
 watch(() => props.date, fetchKpis)
-onMounted(fetchKpis)
+
+const handleOutsideClick = (e) => {
+    if (e.target.tagName !== 'CANVAS') {
+        const tooltipEl = document.getElementById('pie-tooltip-custom');
+        if (tooltipEl) tooltipEl.style.opacity = 0;
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('touchstart', handleOutsideClick);
+    document.addEventListener('mousedown', handleOutsideClick);
+    fetchKpis();
+})
+
+onUnmounted(() => {
+    document.removeEventListener('touchstart', handleOutsideClick);
+    document.removeEventListener('mousedown', handleOutsideClick);
+    const tooltipEl = document.getElementById('pie-tooltip-custom');
+    if (tooltipEl) tooltipEl.style.opacity = 0;
+})
 
 const formatNumber = (val) => Number(val).toFixed(1)
 

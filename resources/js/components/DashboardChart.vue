@@ -11,7 +11,7 @@ import {
     Legend, 
     Filler 
 } from 'chart.js'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import api from '../lib/api'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
@@ -266,8 +266,24 @@ async function fetchData() {
     }
 }
 
+const handleOutsideClick = (e) => {
+    if (e.target.tagName !== 'CANVAS') {
+        const tooltipEl = document.getElementById('chartjs-tooltip-custom');
+        if (tooltipEl) tooltipEl.style.opacity = 0;
+    }
+}
+
 onMounted(() => {
+    document.addEventListener('touchstart', handleOutsideClick);
+    document.addEventListener('mousedown', handleOutsideClick);
     fetchData();
+});
+
+onUnmounted(() => {
+    document.removeEventListener('touchstart', handleOutsideClick);
+    document.removeEventListener('mousedown', handleOutsideClick);
+    const tooltipEl = document.getElementById('chartjs-tooltip-custom');
+    if (tooltipEl) tooltipEl.style.opacity = 0;
 });
 
 import { watch } from 'vue';

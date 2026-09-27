@@ -92,7 +92,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { Bar } from 'vue-chartjs'
 import api from '../lib/api'
 import {
@@ -528,7 +528,23 @@ const chartOptions = computed(() => {
   }
 })
 
+const handleOutsideClick = (e) => {
+  if (e.target.tagName !== 'CANVAS') {
+    const tooltipEl = document.getElementById('chartjs-bar-tooltip');
+    if (tooltipEl) tooltipEl.style.opacity = 0;
+  }
+}
+
 onMounted(() => {
+  document.addEventListener('touchstart', handleOutsideClick);
+  document.addEventListener('mousedown', handleOutsideClick);
   fetchData()
+})
+
+onUnmounted(() => {
+  document.removeEventListener('touchstart', handleOutsideClick);
+  document.removeEventListener('mousedown', handleOutsideClick);
+  const tooltipEl = document.getElementById('chartjs-bar-tooltip');
+  if (tooltipEl) tooltipEl.style.opacity = 0;
 })
 </script>
