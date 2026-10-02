@@ -103,26 +103,26 @@ function formatDate(value) {
                 <div class="x-rounded-card p-0 sm:col-span-24 lg:col-span-16 flex flex-col">
                     <div class="border-b border-line px-4 pt-4 flex flex-wrap justify-between items-center gap-4">
                         <div class="flex gap-6 overflow-x-auto whitespace-nowrap hide-scrollbar">
-                            <button 
-                                @click="activeTab = 'realtime'" 
+                            <button
+                                @click="activeTab = 'realtime'"
                                 class="pb-3 text-sm font-medium transition-colors border-b-2 outline-none"
                                 :class="activeTab === 'realtime' ? 'border-brand text-brand' : 'border-transparent text-muted hover:text-ink hover:border-line-strong'">
                                 Hiện tại
                             </button>
-                            <button 
-                                @click="activeTab = 'dashboard'" 
+                            <button
+                                @click="activeTab = 'dashboard'"
                                 class="pb-3 text-sm font-medium transition-colors border-b-2 outline-none"
                                 :class="activeTab === 'dashboard' ? 'border-brand text-brand' : 'border-transparent text-muted hover:text-ink hover:border-line-strong'">
                                 Lịch sử
                             </button>
-                            <button 
-                                @click="activeTab = 'energy'" 
+                            <button
+                                @click="activeTab = 'energy'"
                                 class="pb-3 text-sm font-medium transition-colors border-b-2 outline-none"
                                 :class="activeTab === 'energy' ? 'border-brand text-brand' : 'border-transparent text-muted hover:text-ink hover:border-line-strong'">
                                 Thống kê
                             </button>
-                            <button 
-                                @click="activeTab = 'settings'" 
+                            <button
+                                @click="activeTab = 'settings'"
                                 class="pb-3 text-sm font-medium transition-colors border-b-2 outline-none"
                                 :class="activeTab === 'settings' ? 'border-brand text-brand' : 'border-transparent text-muted hover:text-ink hover:border-line-strong'">
                                 Cài đặt
@@ -136,20 +136,20 @@ function formatDate(value) {
                         </div>
                         <div v-else-if="activeTab === 'dashboard'" class="px-2 pb-2">
                             <div class="mb-4 flex items-center justify-end gap-2">
-                                <button 
-                                    @click="prevDate" 
+                                <button
+                                    @click="prevDate"
                                     class="p-1 rounded bg-surface hover:bg-line border border-line text-muted hover:text-ink transition"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                                 </button>
-                                <input 
-                                    type="date" 
+                                <input
+                                    type="date"
                                     :max="getTodayString()"
-                                    v-model="selectedDate" 
+                                    v-model="selectedDate"
                                     class="rounded bg-surface border border-line px-3 py-1 text-sm text-ink focus:border-brand focus:ring-1 focus:ring-brand outline-none transition"
                                 >
-                                 <button 
-                                    @click="nextDate" 
+                                 <button
+                                    @click="nextDate"
                                     :disabled="selectedDate >= getTodayString()"
                                     class="p-1 rounded bg-surface hover:bg-line border border-line text-muted hover:text-ink transition disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -169,48 +169,78 @@ function formatDate(value) {
                     </div>
                 </div>
 
-                                <div class="hidden lg:block sm:col-span-24 lg:col-span-8 py-2">
-                    <!-- <div class="x-rounded-card"> -->
-                    <dl class="grid text-right gap-x-10 gap-y-1 sm:grid-cols-1">
-                        <div class="flex gap-7">
-                            <dt class="w-32 shrink-0 text-sm text-muted">Serial</dt>
-                            <dd class="text-sm font-semibold text-ink">{{ device.serial }}</dd>
-                        </div>
-                        <div class="flex gap-7">
-                            <dt class="w-32 shrink-0 text-sm text-muted">Tên thiết bị</dt>
-                            <dd class="text-sm text-ink font-semibold ">{{ device.name || '—' }}</dd>
-                        </div>
-                        <div class="flex gap-7">
-                            <dt class="w-32 shrink-0 text-sm text-muted">Chủ sở hữu</dt>
-                            <dd class="text-sm text-ink">{{ device.owner?.name ?? 'Chưa gắn' }}</dd>
+                <div class="sm:col-span-24 lg:col-span-8 flex">
+
+                    <!-- Thông tin tác giả & Donate -->
+                    <div class="text-left w-full">
+                        <div class="x-rounded-card mt-1 p-3 border border-line-subtle rounded-md shadow-sm">
+                            <p class="text-xs font-bold text-ink mb-2 flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                THÔNG TIN LIÊN HỆ
+                            </p>
+                            <div class="text-[13px] text-muted space-y-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-20 shrink-0">Tác giả:</span>
+                                    <span class="font-semibold text-brand">Dương Xuân Giang</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-20 shrink-0">SĐT / Zalo:</span>
+                                    <span class="font-semibold text-ink flex items-center gap-1.5">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_of_Zalo.svg" class="w-4 h-4 object-contain" alt="Zalo" />
+                                        0384 162 574
+                                    </span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-20 shrink-0">Facebook:</span>
+                                    <a href="https://www.facebook.com/leopotato89" class="font-semibold text-[#1877F2] hover:underline flex items-center gap-1.5">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                        facebook.com/leopotato89
+                                    </a>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-20 shrink-0">Email:</span>
+                                    <a href="mailto:giangdx.tn@gmail.com" class="font-semibold text-ink hover:text-brand transition-colors flex items-center gap-1.5">
+                                        <svg class="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        giangdx.tn@gmail.com
+                                    </a>
+                                </div>
+                            </div>
                         </div>
 
-                         <div class="flex gap-7">
-                            <dt class="w-32 shrink-0 text-sm text-muted">Tạo lúc</dt>
-                            <dd class="text-sm text-ink">{{ formatDate(device.created_at) }}</dd>
+                        <div class="x-rounded-card mt-4 p-3 border border-line-strong border-dashed rounded-md shadow-sm">
+                            <p class="text-xs font-bold text-brand mb-2 flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                                DONATE ỦNG HỘ TÁC GIẢ
+                            </p>
+                            <div class="flex items-center gap-3 mt-1">
+                                <div class="shrink-0">
+                                    <img src="https://img.vietqr.io/image/tpb-99325101989-qr_only.png" alt="QR Donate" class="w-24 h-24 rounded-md border border-line-subtle shadow-sm" />
+                                </div>
+                                <div class="text-[13px] text-muted space-y-2 w-full">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-18 shrink-0">Ngân hàng:</span>
+                                        <span class="font-semibold text-ink flex items-center gap-1.5">
+                                            <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/02/Icon-TPBank.png" class="w-4 h-4 object-contain" alt="TPBank" />
+                                            TPBank
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-18 shrink-0">STK:</span>
+                                        <span class="font-semibold text-ink">99325101989</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-18 shrink-0">Chủ TK:</span>
+                                        <span class="font-semibold text-ink">DUONG XUAN GIANG</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <!-- <hr class="my-4 border-gray-400"> -->
-                        <!-- 2 dòng trạng thái Lỗi -->
-                        <div class="flex gap-7" v-if="device.fault_code">
-                            <dt class="w-32 shrink-0 text-sm text-muted">Lỗi</dt>
-                            <dd class="text-sm font-semibold" :class="device.fault_code ? 'text-danger' : 'text-ok'">
-                                {{ device.fault_code || 'Bình thường' }}
-                            </dd>
-                        </div>
-                        <div class="flex gap-7" v-if="device.fault_message">
-                            <dt class="w-32 shrink-0 text-sm text-muted">Thông báo lỗi</dt>
-                            <dd class="text-sm text-ink truncate" :title="device.fault_message || 'Không có'">
-                                {{ device.fault_message || '—' }}
-                            </dd>
-                        </div>
-
-                       
-                    </dl>
-                    <!-- </div> -->
+                    </div>
+                    <!-- End Thông tin tác giả -->
                 </div>
             </div>
 
-            
+
             <!-- <p class="rounded-card border border-dashed border-line-strong bg-surface/60 p-10 text-center text-sm text-muted">
                 Biểu đồ lịch sử sẽ được dựng ở bước tiếp theo.
             </p> -->

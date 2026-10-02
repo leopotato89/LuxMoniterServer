@@ -25,14 +25,14 @@
     --muted: #6b7280;
     --subtle: #9ca3af;
 
-    --accent: #e68a6e;
-    --accent-hover: #db7a5c;
-    --accent-soft: #fdf0ec;
-    --accent-rgb: 230 138 110;
+    --accent: #ea580c;
+    --accent-hover: #c2410c;
+    --accent-soft: #ffedd5;
+    --accent-rgb: 234 88 12;
 
     --ok: #15803d;
     --danger: #dc2626;
-    --grid-color: rgb(230 138 110 / 0.35);
+    --grid-color: rgb(234 88 12 / 0.25);
     --shadow-soft: 0 2px 12px -2px rgba(10, 10, 10, 0.26);
 
     /* Sơ đồ năng lượng — SVG dùng màu cứng nên cần bảng biến riêng */

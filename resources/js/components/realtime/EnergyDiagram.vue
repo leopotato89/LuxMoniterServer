@@ -228,7 +228,7 @@ function rssiLabel(value) {
                 </g>
 
                 <text x="220" y="128" font-size="18" font-weight="400">AC Couple</text>
-                <text x="220" y="156" font-size="28">
+                <text x="220" y="156" font-size="28" class="val-blue">
                     <tspan font-weight="700">{{ fmt(values.accouple_power, 0) }}</tspan><tspan font-weight="400">W</tspan>
                 </text>
 
@@ -267,7 +267,7 @@ function rssiLabel(value) {
                 </text>
 
                 <text x="98" y="290" font-size="18" font-weight="400">Lưới điện</text>
-                <text x="98" y="318" font-size="28">
+                <text x="98" y="318" font-size="28" class="val-blue">
                     <tspan font-weight="700">{{ fmt(values.grid_power, 0) }}</tspan><tspan font-weight="400">W</tspan>
                 </text>
 
@@ -298,7 +298,7 @@ function rssiLabel(value) {
                 </g>
 
                 <text x="220" y="498" font-size="18" font-weight="400">Tải sử dụng</text>
-                <text x="220" y="526" font-size="28">
+                <text x="220" y="526" font-size="28" class="val-blue">
                     <tspan font-weight="700">{{ fmt(values.load_power, 0) }}</tspan><tspan font-weight="400">W</tspan>
                 </text>
 
@@ -314,22 +314,22 @@ function rssiLabel(value) {
                 <rect x="352" y="254" width="176" height="142" class="screen-box" />
 
                 <text x="440" y="280" font-size="18" font-weight="400" text-anchor="middle">Biến tần</text>
-                <text x="440" y="310" font-size="28" text-anchor="middle">
+                <text x="440" y="310" font-size="28" text-anchor="middle" class="val-green">
                     <tspan font-weight="700">{{ fmt(values.inverter_power, 0) }}</tspan><tspan font-weight="400">W</tspan>
                 </text>
 
                 <text x="364" y="345" font-size="13"><tspan font-weight="400">Bên trong:</tspan></text>
-                <text x="516" y="345" font-size="13" text-anchor="end">
+                <text x="516" y="345" font-size="13" text-anchor="end" :class="{ 'temp-alert': latest?.inner_temp > 55 }">
                     <tspan font-weight="700">{{ fmt(latest?.inner_temp, 1) }}</tspan><tspan font-weight="400">°C</tspan>
                 </text>
 
                 <text x="364" y="363" font-size="13"><tspan font-weight="400">Cảm biến 1:</tspan></text>
-                <text x="516" y="363" font-size="13" text-anchor="end">
+                <text x="516" y="363" font-size="13" text-anchor="end" :class="{ 'temp-alert': latest?.radiator1_temp > 55 }">
                     <tspan font-weight="700">{{ fmt(latest?.radiator1_temp, 1) }}</tspan><tspan font-weight="400">°C</tspan>
                 </text>
 
                 <text x="364" y="381" font-size="13"><tspan font-weight="400">Cảm biến 2:</tspan></text>
-                <text x="516" y="381" font-size="13" text-anchor="end">
+                <text x="516" y="381" font-size="13" text-anchor="end" :class="{ 'temp-alert': latest?.radiator2_temp > 55 }">
                     <tspan font-weight="700">{{ fmt(latest?.radiator2_temp, 1) }}</tspan><tspan font-weight="400">°C</tspan>
                 </text>
 
@@ -362,11 +362,11 @@ function rssiLabel(value) {
                 </g>
 
                 <text x="677" y="250" font-size="18" font-weight="400">Pin lưu trữ</text>
-                <text x="677" y="285" font-size="28">
+                <text x="677" y="285" font-size="28" class="val-green">
                     <tspan font-weight="700">{{ fmt(values.battery_power, 0) }}</tspan><tspan font-weight="400">W </tspan>
                 </text>
 
-                <text x="680" y="308" font-size="28">
+                <text x="680" y="308" font-size="28" class="val-green">
                     <!-- Dòng pin = Công suất ÷ Điện áp, để luôn khớp với số W hiển thị -->
                     <tspan font-weight="700" font-size="18">{{ fmt(values.battery_current, 1) }}</tspan><tspan font-weight="400" font-size="18">A</tspan>
                 </text>
@@ -376,7 +376,7 @@ function rssiLabel(value) {
                 </text>
                 <text x="677" y="356" font-size="14">
                     <tspan font-weight="400">Nhiệt độ: </tspan>
-                    <tspan font-weight="700">{{ fmt(latest?.battery_temp, 1) }}</tspan><tspan font-weight="400">°C</tspan>
+                    <tspan font-weight="700" :class="{ 'temp-alert': latest?.battery_temp > 50 }">{{ fmt(latest?.battery_temp, 1) }}</tspan><tspan font-weight="400" :class="{ 'temp-alert': latest?.battery_temp > 50 }">°C</tspan>
                 </text>
                 <text x="677" y="374" font-size="14">
                     <tspan font-weight="400">DL: </tspan>
@@ -419,7 +419,7 @@ function rssiLabel(value) {
                 </text>
 
                 <text x="485" y="558" font-size="18" font-weight="400">Nguồn dự phòng</text>
-                <text x="485" y="586" font-size="28">
+                <text x="485" y="586" font-size="28" class="val-purple">
                     <tspan font-weight="700">{{ fmt(values.eps_power, 0) }}</tspan><tspan font-weight="400">W</tspan>
                 </text>
 
@@ -448,7 +448,7 @@ function rssiLabel(value) {
 
             <text x="30" y="669" font-size="14" fill="#475569">
                 <tspan font-weight="400">Cập nhật: </tspan>
-                <tspan font-weight="700">{{ timestamp ?? '—' }}</tspan>
+                <tspan font-weight="700" fill="var(--accent)">{{ timestamp ?? '—' }}</tspan>
             </text>
         </svg>
     </div>
@@ -519,6 +519,32 @@ function rssiLabel(value) {
 
     .diagram-container text[font-size='15'] {
         font-size: 17px;
+    }
+
+    .diagram-container text[font-size='28'] {
+        fill: var(--accent);
+    }
+
+    .diagram-container text.val-blue {
+        fill: #0284c7;
+    }
+
+    .diagram-container text.val-green {
+        fill: #16a34a;
+    }
+
+    .diagram-container text.val-purple {
+        fill: #9333ea;
+    }
+
+    .temp-alert {
+        fill: var(--danger) !important;
+        animation: pulse-danger 0.7s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
+    }
+
+    @keyframes pulse-danger {
+        0% { opacity: 1; }
+        100% { opacity: 0.4; }
     }
 
     .main-box {
