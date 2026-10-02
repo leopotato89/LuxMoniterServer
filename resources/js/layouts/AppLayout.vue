@@ -44,7 +44,7 @@ onUnmounted(() => {
             <div class="mx-auto flex h-16 max-w-7xl items-center gap-3 px-2 lg:px-4">
                 <RouterLink :to="{ name: 'devices.index' }" class="flex shrink-0 items-center gap-2">
                     <LogoMark />
-                    <span class="font-bold tracking-tight">LuxMonitor</span>
+                    <span class="font-bold tracking-tight">Lux<span class="text-brand">Monitor</span></span>
                 </RouterLink>
 
                 <div class="ml-auto flex items-center gap-2">

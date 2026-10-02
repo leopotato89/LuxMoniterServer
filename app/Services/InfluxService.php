@@ -179,7 +179,7 @@ from(bucket: "%s")
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
   |> filter(fn: (r) => %s)
-  |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
+  |> aggregateWindow(every: 1d, fn: max, createEmpty: false, timeSrc: "_start")
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
                 $timezone,
                 config('influx.bucket'),
@@ -225,8 +225,8 @@ from(bucket: "%s")
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
   |> filter(fn: (r) => %s)
-  |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
-  |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false)
+  |> aggregateWindow(every: 1d, fn: max, createEmpty: false, timeSrc: "_start")
+  |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false, timeSrc: "_start")
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
                 $timezone,
                 config('influx.bucket'),
@@ -272,8 +272,8 @@ from(bucket: "%s")
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
   |> filter(fn: (r) => %s)
-  |> aggregateWindow(every: 1d, fn: max, createEmpty: false)
-  |> aggregateWindow(every: 1y, fn: sum, createEmpty: false)
+  |> aggregateWindow(every: 1d, fn: max, createEmpty: false, timeSrc: "_start")
+  |> aggregateWindow(every: 1y, fn: sum, createEmpty: false, timeSrc: "_start")
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
                 $timezone,
                 config('influx.bucket'),

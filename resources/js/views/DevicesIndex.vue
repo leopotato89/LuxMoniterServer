@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue';
-import { RouterLink } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import {
     CheckCircleIcon,
     ChevronDownIcon,
@@ -17,6 +17,7 @@ import api from '../lib/api';
 
 const auth = useAuthStore();
 const devices = useDevicesStore();
+const router = useRouter();
 
 const search = ref('');
 const claimOpen = ref(false);
@@ -51,7 +52,6 @@ const columns = [
     { key: 'name', label: 'Tên thiết bị', sortable: true },
     { key: 'owner', label: 'Chủ sở hữu' },
     { key: 'verified_at', label: 'Đã xác minh' },
-    { key: 'enabled', label: 'Bật' },
     { key: 'created_at', label: 'Tạo lúc', sortable: true },
 ];
 
@@ -231,14 +231,14 @@ async function confirmDelete() {
                     </thead>
 
                     <tbody class="divide-y divide-line">
-                        <tr v-for="device in devices.items" :key="device.serial" class="transition hover:bg-brand-soft/40">
-                            <td class="px-4 py-3 font-semibold">
-                                <RouterLink
-                                    :to="{ name: 'devices.show', params: { serial: device.serial } }"
-                                    class="text-brand transition hover:text-brand-strong"
-                                >
-                                    {{ device.serial }}
-                                </RouterLink>
+                        <tr 
+                            v-for="device in devices.items" 
+                            :key="device.serial" 
+                            class="transition hover:bg-brand-soft/40 cursor-pointer"
+                            @click="router.push({ name: 'devices.show', params: { serial: device.serial } })"
+                        >
+                            <td class="px-4 py-3 font-semibold text-brand">
+                                {{ device.serial }}
                             </td>
                             <td class="px-4 py-3 text-ink">{{ device.name || '—' }}</td>
                             <td class="px-4 py-3 text-ink">
@@ -253,27 +253,15 @@ async function confirmDelete() {
                                 />
                                 <XCircleIcon v-else class="h-5 w-5 text-danger" title="Chưa xác minh" />
                             </td>
-                            <td class="px-4 py-3">
-                                <ToggleSwitch
-                                    :model-value="device.enabled"
-                                    @update:model-value="devices.toggleEnabled(device)"
-                                />
-                            </td>
                             <td class="px-4 py-3 whitespace-nowrap text-muted">
                                 {{ formatDate(device.created_at) }}
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex items-center justify-end gap-4 whitespace-nowrap">
-                                    <RouterLink
-                                        :to="{ name: 'devices.show', params: { serial: device.serial } }"
-                                        class="font-medium text-brand transition hover:text-brand-strong"
-                                    >
-                                        Xem
-                                    </RouterLink>
                                     <button
                                         type="button"
                                         class="font-medium text-muted transition hover:text-ink"
-                                        @click="openEdit(device)"
+                                        @click.stop="openEdit(device)"
                                     >
                                         Sửa
                                     </button>
@@ -281,7 +269,7 @@ async function confirmDelete() {
                                         v-if="auth.isAdmin"
                                         type="button"
                                         class="font-medium text-danger transition hover:brightness-90"
-                                        @click="deleteTarget = device"
+                                        @click.stop="deleteTarget = device"
                                     >
                                         Xóa
                                     </button>

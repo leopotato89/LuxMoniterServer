@@ -11,7 +11,7 @@ import ThemeToggle from '../components/ui/ThemeToggle.vue';
         <header class="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-6">
             <div class="flex items-center gap-2">
                 <LogoMark />
-                <span class="font-bold tracking-tight">LuxMonitor</span>
+                <span class="font-bold tracking-tight">Lux<span class="text-brand">Monitor</span></span>
             </div>
 
             <div class="flex items-center gap-4">
@@ -25,7 +25,7 @@ import ThemeToggle from '../components/ui/ThemeToggle.vue';
         <main class="relative mx-auto flex w-full max-w-7xl justify-center px-4 py-10 lg:px-6">
             <div class="w-full max-w-md">
                 <div class="mb-6 text-center">
-                    <h1 class="text-3xl font-extrabold tracking-tight">LuxMonitor</h1>
+                    <h1 class="text-3xl font-extrabold tracking-tight">Lux<span class="text-brand">Monitor</span></h1>
                     <p class="mt-2 text-sm text-muted">Giám sát hệ thống điện mặt trời gia đình</p>
                 </div>
 
