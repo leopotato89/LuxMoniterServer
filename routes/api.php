@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\DeviceSettingsController;
 use App\Http\Controllers\Api\V1\DeviceTelemetryController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\VerifyWorkerSecret;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,6 +19,12 @@ use Illuminate\Support\Facades\Route;
 
 // Công khai: ESP32 gọi để lấy mã thiết bị (cân nhắc bảo mật chi tiết ở Phase 6)
 Route::get('/device-code/{serial}', DeviceCodeController::class);
+
+// Webhook nội bộ: Node.js worker gọi để tạo thiết bị & xác nhận mã
+Route::middleware(VerifyWorkerSecret::class)->group(function (): void {
+    Route::post('/v1/devices/auto-register', [DeviceController::class, 'autoRegister']);
+    Route::post('/v1/devices/confirm-code', [DeviceController::class, 'confirmCode']);
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -39,6 +46,7 @@ Route::prefix('v1')->group(function (): void {
 
         // Thiết bị. `claim` phải đứng trước `{device}` để không bị bind nhầm.
         Route::post('/devices/claim', [DeviceController::class, 'claim']);
+        Route::post('/devices/{device:serial}/unclaim', [DeviceController::class, 'unclaim']);
         Route::get('/devices', [DeviceController::class, 'index']);
         Route::post('/devices', [DeviceController::class, 'store']);
         Route::get('/devices/{device:serial}', [DeviceController::class, 'show']);

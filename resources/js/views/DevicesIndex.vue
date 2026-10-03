@@ -13,10 +13,12 @@ import Modal from '../components/ui/Modal.vue';
 import ToggleSwitch from '../components/ui/ToggleSwitch.vue';
 import { useAuthStore } from '../stores/auth';
 import { useDevicesStore } from '../stores/devices';
+import { useToastStore } from '../stores/toast';
 import api from '../lib/api';
 
 const auth = useAuthStore();
 const devices = useDevicesStore();
+const toast = useToastStore();
 const router = useRouter();
 
 const search = ref('');
@@ -35,6 +37,9 @@ const editSubmitting = ref(false);
 const deleteTarget = ref(null);
 const deleteSubmitting = ref(false);
 
+const unclaimTarget = ref(null);
+const unclaimSubmitting = ref(false);
+
 const users = ref([]);
 
 async function fetchUsers() {
@@ -47,13 +52,19 @@ async function fetchUsers() {
     }
 }
 
-const columns = [
-    { key: 'serial', label: 'Serial', sortable: true },
-    { key: 'name', label: 'Tên thiết bị', sortable: true },
-    { key: 'owner', label: 'Chủ sở hữu' },
-    { key: 'verified_at', label: 'Đã xác minh' },
-    { key: 'created_at', label: 'Tạo lúc', sortable: true },
-];
+const columns = computed(() => {
+    const cols = [
+        { key: 'serial', label: 'Serial', sortable: true },
+        { key: 'name', label: 'Tên thiết bị', sortable: true },
+        { key: 'owner', label: 'Chủ sở hữu' },
+        { key: 'verified_at', label: 'Đã xác minh' },
+    ];
+    if (auth.isAdmin) {
+        cols.push({ key: 'device_code', label: 'Mã TB' });
+    }
+    cols.push({ key: 'created_at', label: 'Tạo lúc', sortable: true });
+    return cols;
+});
 
 const claimedFilter = computed({
     get: () => devices.filters.claimed,
@@ -177,6 +188,30 @@ async function confirmDelete() {
         deleteSubmitting.value = false;
     }
 }
+
+async function confirmUnclaim() {
+    unclaimSubmitting.value = true;
+
+    try {
+        const ok = await devices.unclaim(unclaimTarget.value.serial);
+
+        if (ok) {
+            unclaimTarget.value = null;
+        }
+    } finally {
+        unclaimSubmitting.value = false;
+    }
+}
+
+async function copyCode(text) {
+    if (!text) return;
+    try {
+        await navigator.clipboard.writeText(text);
+        toast.success('Đã copy: ' + text);
+    } catch (e) {
+        toast.error('Không thể copy');
+    }
+}
 </script>
 
 <template>
@@ -238,7 +273,14 @@ async function confirmDelete() {
                             @click="router.push({ name: 'devices.show', params: { serial: device.serial } })"
                         >
                             <td class="px-4 py-3 font-semibold text-brand">
-                                {{ device.serial }}
+                                <button 
+                                    type="button" 
+                                    class="transition hover:opacity-75 text-left w-full focus:outline-none flex items-center gap-1"
+                                    title="Nhấn để copy"
+                                    @click.stop="copyCode(device.serial)"
+                                >
+                                    {{ device.serial }}
+                                </button>
                             </td>
                             <td class="px-4 py-3 text-ink">{{ device.name || '—' }}</td>
                             <td class="px-4 py-3 text-ink">
@@ -253,6 +295,18 @@ async function confirmDelete() {
                                 />
                                 <XCircleIcon v-else class="h-5 w-5 text-danger" title="Chưa xác minh" />
                             </td>
+                            <td v-if="auth.isAdmin" class="px-4 py-3 text-ink font-mono text-xs">
+                                <button 
+                                    v-if="device.device_code"
+                                    type="button" 
+                                    class="transition hover:text-brand text-left w-full focus:outline-none"
+                                    title="Nhấn để copy"
+                                    @click.stop="copyCode(device.device_code)"
+                                >
+                                    {{ device.device_code }}
+                                </button>
+                                <span v-else class="text-muted">—</span>
+                            </td>
                             <td class="px-4 py-3 whitespace-nowrap text-muted">
                                 {{ formatDate(device.created_at) }}
                             </td>
@@ -266,10 +320,9 @@ async function confirmDelete() {
                                         Sửa
                                     </button>
                                     <button
-                                        v-if="auth.isAdmin"
                                         type="button"
                                         class="font-medium text-danger transition hover:brightness-90"
-                                        @click.stop="deleteTarget = device"
+                                        @click.stop="auth.isAdmin ? deleteTarget = device : unclaimTarget = device"
                                     >
                                         Xóa
                                     </button>
@@ -420,6 +473,20 @@ async function confirmDelete() {
                 <Button variant="ghost" @click="deleteTarget = null">Huỷ</Button>
                 <Button variant="danger" :disabled="deleteSubmitting" @click="confirmDelete">
                     {{ deleteSubmitting ? 'Đang xoá…' : 'Xoá' }}
+                </Button>
+            </template>
+        </Modal>
+
+        <!-- Modal: xác nhận huỷ theo dõi (user) -->
+        <Modal :open="unclaimTarget !== null" title="Xóa thiết bị" @close="unclaimTarget = null">
+            <p class="text-sm text-muted">
+                Bạn có chắc chắn muốn xóa thiết bị <strong class="text-ink">{{ unclaimTarget?.serial }}</strong> khỏi danh sách của bạn không?
+            </p>
+
+            <template #footer>
+                <Button variant="ghost" @click="unclaimTarget = null">Huỷ</Button>
+                <Button variant="danger" :disabled="unclaimSubmitting" @click="confirmUnclaim">
+                    {{ unclaimSubmitting ? 'Đang xóa…' : 'Xóa' }}
                 </Button>
             </template>
         </Modal>

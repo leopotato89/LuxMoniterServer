@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'worker' => [
+        'secret' => env('WORKER_SECRET', 'secret-key-123'),
+    ],
+
 ];

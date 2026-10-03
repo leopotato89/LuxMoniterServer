@@ -131,6 +131,20 @@ export const useDevicesStore = defineStore('devices', () => {
         }
     }
 
+    async function unclaim(serial) {
+        try {
+            await api.post(`/v1/devices/${serial}/unclaim`);
+            toast.success('Đã xóa thiết bị.');
+            await fetch();
+
+            return true;
+        } catch (e) {
+            toast.error(firstError(e));
+
+            return false;
+        }
+    }
+
     async function toggleEnabled(device) {
         return update(device.serial, { enabled: !device.enabled });
     }
@@ -146,6 +160,7 @@ export const useDevicesStore = defineStore('devices', () => {
         create,
         destroy,
         claim,
+        unclaim,
         toggleEnabled,
     };
 });
