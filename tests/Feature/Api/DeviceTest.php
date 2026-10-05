@@ -173,15 +173,16 @@ test('admin gán được chủ sở hữu khác', function () {
     expect($device->fresh()->owner_id)->toBe($target->id);
 });
 
-test('chỉ admin xoá được thiết bị', function () {
+test('admin và chủ sở hữu xoá được thiết bị', function () {
     $owner = User::factory()->create();
+    $stranger = User::factory()->create();
     $device = Device::factory()->create(['owner_id' => $owner->id]);
 
-    $this->actingAs($owner, 'sanctum')
+    $this->actingAs($stranger, 'sanctum')
         ->deleteJson("/api/v1/devices/{$device->serial}")
         ->assertForbidden();
 
-    $this->actingAs(User::factory()->create(['is_admin' => true]), 'sanctum')
+    $this->actingAs($owner, 'sanctum')
         ->deleteJson("/api/v1/devices/{$device->serial}")
         ->assertNoContent();
 

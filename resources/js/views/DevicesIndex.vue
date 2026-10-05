@@ -3,8 +3,6 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import {
     CheckCircleIcon,
-    ChevronDownIcon,
-    ChevronUpIcon,
     PlusIcon,
     XCircleIcon,
 } from '@heroicons/vue/24/outline';
@@ -18,6 +16,10 @@ import api from '../lib/api';
 const auth = useAuthStore();
 const devices = useDevicesStore();
 const router = useRouter();
+
+if (!auth.isAdmin) {
+    devices.filters.per_page = 5;
+}
 
 const search = ref('');
 const claimOpen = ref(false);
@@ -47,21 +49,9 @@ async function fetchUsers() {
     }
 }
 
-const columns = [
-    { key: 'serial', label: 'Serial', sortable: true },
-    { key: 'name', label: 'Tên thiết bị', sortable: true },
-    { key: 'owner', label: 'Chủ sở hữu' },
-    { key: 'verified_at', label: 'Đã xác minh' },
-    { key: 'created_at', label: 'Tạo lúc', sortable: true },
-];
 
-const claimedFilter = computed({
-    get: () => devices.filters.claimed,
-    set: (value) => {
-        devices.filters.claimed = value;
-        devices.filters.page = 1;
-    },
-});
+
+
 
 // Gõ tìm kiếm: chờ 300ms rồi mới gọi API.
 let searchTimer = null;
@@ -76,7 +66,7 @@ watch(search, (value) => {
 });
 
 watch(
-    () => [devices.filters.page, devices.filters.per_page, devices.filters.sort, devices.filters.direction, devices.filters.claimed],
+    () => [devices.filters.page, devices.filters.per_page, devices.filters.sort, devices.filters.direction],
     () => devices.fetch(),
 );
 
@@ -85,19 +75,7 @@ onMounted(() => {
     fetchUsers();
 });
 
-function formatDate(value) {
-    if (!value) {
-        return '—';
-    }
 
-    return new Date(value).toLocaleString('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-}
 
 async function submitClaim() {
     claimSubmitting.value = true;
@@ -180,140 +158,166 @@ async function confirmDelete() {
 </script>
 
 <template>
-    <div class="space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <h1 class="text-xl font-bold tracking-tight text-ink ml-1">Thiết bị</h1>
+    <div class="space-y-4">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Danh sách thiết bị (1/3) -->
+            <div class="lg:col-span-1">
+                <div class="x-rounded-card p-0 flex flex-col overflow-hidden">
+                    <!-- Header & Bộ lọc -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-line">
+                        <h1 class="text-lg font-bold tracking-tight text-ink">Thiết bị</h1>
 
-            <Button v-if="auth.isAdmin" @click="createOpen = true">
-                <PlusIcon class="h-4 w-4" />
-                Tạo thiết bị
-            </Button>
-            <Button v-else @click="claimOpen = true">
-                <PlusIcon class="h-4 w-4" />
-                Thêm thiết bị giám sát
-            </Button>
-        </div>
+                        <Button v-if="auth.isAdmin" size="sm" @click="createOpen = true">
+                            <PlusIcon class="h-4 w-4" />
+                            Tạo
+                        </Button>
+                        <Button v-else size="sm" @click="claimOpen = true">
+                            <PlusIcon class="h-4 w-4" />
+                            Thêm
+                        </Button>
+                    </div>
 
-        <div class="rounded-card border border-line bg-surface shadow-card">
-            <!-- Bộ lọc -->
-            <div class="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3">
-                <input v-model="search" class="field max-w-xs" type="search" placeholder="Tìm theo serial hoặc tên…">
+                    <div class="flex flex-col gap-3 px-4 py-3 border-b border-line">
+                        <div class="flex items-center gap-2">
+                            <input v-model="search" class="field w-full" type="search" placeholder="Tìm theo serial hoặc tên…">
+                            <span v-if="devices.loading" class="text-sm text-muted shrink-0">Tải…</span>
+                        </div>
+                    </div>
 
-                <select v-if="auth.isAdmin" v-model="claimedFilter" class="field w-auto">
-                    <option value="">Mọi trạng thái gắn chủ</option>
-                    <option value="1">Đã gắn chủ</option>
-                    <option value="0">Chưa gắn</option>
-                </select>
-
-                <span v-if="devices.loading" class="text-sm text-muted">Đang tải…</span>
-            </div>
-
-            <!-- Bảng -->
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-surface-alt text-xs font-semibold tracking-wide text-muted uppercase">
-                        <tr>
-                            <th v-for="column in columns" :key="column.key" class="px-4 py-3 whitespace-nowrap">
-                                <button
-                                    v-if="column.sortable"
-                                    type="button"
-                                    class="inline-flex items-center gap-1 uppercase transition hover:text-brand"
-                                    @click="devices.toggleSort(column.key)"
-                                >
-                                    {{ column.label }}
-                                    <ChevronUpIcon v-if="devices.filters.sort === column.key && devices.filters.direction === 'asc'" class="h-3.5 w-3.5" />
-                                    <ChevronDownIcon v-else-if="devices.filters.sort === column.key" class="h-3.5 w-3.5" />
-                                </button>
-                                <template v-else>{{ column.label }}</template>
-                            </th>
-                            <th class="px-4 py-3 text-right whitespace-nowrap">Hành động</th>
-                        </tr>
-                    </thead>
-
-                    <tbody class="divide-y divide-line">
-                        <tr 
+                    <!-- Danh sách từng thiết bị -->
+                    <div class="flex flex-col gap-3 p-4">
+                        <div 
                             v-for="device in devices.items" 
                             :key="device.serial" 
-                            class="transition hover:bg-brand-soft/40 cursor-pointer"
+                            class="rounded-xl border border-line bg-surface shadow-sm p-4 transition hover:border-brand/50 hover:shadow-md cursor-pointer flex flex-col gap-2"
                             @click="router.push({ name: 'devices.show', params: { serial: device.serial } })"
                         >
-                            <td class="px-4 py-3 font-semibold text-brand">
-                                {{ device.serial }}
-                            </td>
-                            <td class="px-4 py-3 text-ink">{{ device.name || '—' }}</td>
-                            <td class="px-4 py-3 text-ink">
-                                <span v-if="device.owner">{{ device.owner.name }}</span>
-                                <span v-else class="text-muted">Chưa gắn</span>
-                            </td>
-                            <td class="px-4 py-3">
-                                <CheckCircleIcon
-                                    v-if="device.verified_at"
-                                    class="h-5 w-5 text-ok"
-                                    title="Đã xác minh"
-                                />
-                                <XCircleIcon v-else class="h-5 w-5 text-danger" title="Chưa xác minh" />
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-muted">
-                                {{ formatDate(device.created_at) }}
-                            </td>
-                            <td class="px-4 py-3">
-                                <div class="flex items-center justify-end gap-4 whitespace-nowrap">
-                                    <button
-                                        type="button"
-                                        class="font-medium text-muted transition hover:text-ink"
-                                        @click.stop="openEdit(device)"
-                                    >
-                                        Sửa
-                                    </button>
-                                    <button
-                                        v-if="auth.isAdmin"
-                                        type="button"
-                                        class="font-medium text-danger transition hover:brightness-90"
-                                        @click.stop="deleteTarget = device"
-                                    >
-                                        Xóa
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                            <!-- Header row -->
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="text-base font-bold text-brand truncate" :title="device.serial">SN: {{ device.serial }}</h3>
+                                <CheckCircleIcon v-if="device.verified_at" class="h-5 w-5 text-ok shrink-0" title="Đã xác minh" />
+                                <XCircleIcon v-else class="h-5 w-5 text-danger shrink-0" title="Chưa xác minh" />
+                            </div>
 
-                        <tr v-if="!devices.loading && devices.items.length === 0">
-                            <td :colspan="columns.length + 1" class="px-4 py-12 text-center text-muted">
-                                Không có thiết bị nào.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            <!-- Text block -->
+                            <div class="text-sm text-muted">
+                                <p v-if="device.name" class="truncate">Tên thiết bị: {{ device.name }}</p>
+                                <p class="truncate">Chủ sở hữu: <span v-if="device.owner" class="font-medium text-brand">{{ device.owner.name }}</span><span v-else>Chưa gắn</span></p>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="mt-1 pt-2 flex justify-end gap-4 text-sm font-medium border-t border-line/40">
+                                <button
+                                    type="button"
+                                    class="text-danger hover:brightness-90 transition"
+                                    @click.stop="deleteTarget = device"
+                                >
+                                    Xóa
+                                </button>
+                                <button
+                                    type="button"
+                                    class="text-ink hover:text-brand transition"
+                                    @click.stop="openEdit(device)"
+                                >
+                                    Sửa
+                                </button>
+                            </div>
+                        </div>
+
+                        <div v-if="!devices.loading && devices.items.length === 0" class="rounded-xl border border-line bg-surface/60 p-8 text-center text-muted text-sm backdrop-blur-sm">
+                            Không có thiết bị nào.
+                        </div>
+                    </div>
+
+                    <!-- Phân trang -->
+                    <div 
+                        v-if="auth.isAdmin || devices.meta.last_page > 1" 
+                        class="border-t border-line px-4 py-3 flex flex-col gap-3 text-sm"
+                    >
+                        <div v-if="auth.isAdmin" class="flex items-center justify-between text-muted">
+                            <div class="flex items-center gap-2">
+                                <select v-model.number="devices.filters.per_page" class="field w-auto py-1 pl-2.5 pr-7 text-xs cursor-pointer">
+                                    <option v-for="size in [5, 10, 25, 50]" :key="size" :value="size">{{ size }}</option>
+                                </select>
+                                <span>/trang</span>
+                            </div>
+                            <span>{{ devices.meta.total }} thiết bị</span>
+                        </div>
+
+                        <div 
+                            v-if="devices.meta.last_page > 1 || auth.isAdmin" 
+                            class="flex items-center justify-between"
+                        >
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                :disabled="devices.filters.page <= 1"
+                                @click="devices.filters.page--"
+                            >
+                                Trước
+                            </Button>
+                            <span class="text-muted text-xs">Trang {{ devices.meta.current_page }} / {{ devices.meta.last_page }}</span>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                :disabled="devices.filters.page >= devices.meta.last_page"
+                                @click="devices.filters.page++"
+                            >
+                                Sau
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Phân trang -->
-            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3 text-sm">
-                <div class="flex items-center gap-2 text-muted">
-                    <span>Mỗi trang</span>
-                    <select v-model.number="devices.filters.per_page" class="field w-auto py-1">
-                        <option v-for="size in [5, 10, 25, 50]" :key="size" :value="size">{{ size }}</option>
-                    </select>
-                    <span>{{ devices.meta.total }} thiết bị</span>
-                </div>
+            <!-- Hướng dẫn (2/3) -->
+            <div class="lg:col-span-1">
+                <div class="p-2 lg:p-6">
+                    <h2 class="text-xl font-bold text-brand mb-6 border-b border-line pb-4">Hướng dẫn cài đặt & Kết nối thiết bị</h2>
+                    
+                    <div class="space-y-8 text-ink text-sm lg:text-base leading-relaxed">
+                        <section>
+                            <h3 class="text-lg font-semibold flex items-center gap-2 mb-3">
+                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-brand-soft text-brand text-sm font-bold">1</span>
+                                Lấy thông tin từ ESP32
+                            </h3>
+                            <p class="mb-2">Để thêm thiết bị vào hệ thống, bạn cần kết nối vào mạng WiFi do bộ theo dõi (ESP32) phát ra. Mạng này thường có tên dạng <code class="bg-surface-alt px-1.5 py-0.5 rounded border border-line text-brand">LuxMonitor_XXXX</code>.</p>
+                            <p>Sau khi kết nối WiFi, hãy mở trình duyệt web và truy cập vào địa chỉ <code class="bg-surface-alt px-1.5 py-0.5 rounded border border-line text-brand">http://192.168.4.1</code>.</p>
+                            <p class="mt-2">Tại trang quản lý của ESP32, bạn sẽ thấy thông tin <strong>Serial</strong> và <strong>Mã thiết bị (Device Code)</strong>. Hãy ghi lại hoặc copy hai thông tin này.</p>
+                        </section>
 
-                <div class="flex items-center gap-3">
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        :disabled="devices.filters.page <= 1"
-                        @click="devices.filters.page--"
-                    >
-                        Trước
-                    </Button>
-                    <span class="text-muted">Trang {{ devices.meta.current_page }} / {{ devices.meta.last_page }}</span>
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        :disabled="devices.filters.page >= devices.meta.last_page"
-                        @click="devices.filters.page++"
-                    >
-                        Sau
-                    </Button>
+                        <section>
+                            <h3 class="text-lg font-semibold flex items-center gap-2 mb-3">
+                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-brand-soft text-brand text-sm font-bold">2</span>
+                                Thêm thiết bị vào tài khoản
+                            </h3>
+                            <p class="mb-2">Nhấn vào nút <strong>Thêm thiết bị giám sát</strong> ở góc trên bên phải của trang này.</p>
+                            <p>Nhập <strong>Serial</strong> và <strong>Mã thiết bị</strong> vừa lấy được ở bước 1 vào biểu mẫu và xác nhận.</p>
+                            <p class="mt-2">Nếu thông tin hợp lệ, thiết bị sẽ được thêm vào danh sách bên trái và hiển thị trạng thái <span class="inline-flex items-center gap-1 text-ok font-medium"><CheckCircleIcon class="w-4 h-4" /> Đã xác minh</span>.</p>
+                        </section>
+                        
+                        <section>
+                            <h3 class="text-lg font-semibold flex items-center gap-2 mb-3">
+                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-brand-soft text-brand text-sm font-bold">3</span>
+                                Cấu hình MQTT cho ESP32
+                            </h3>
+                            <p class="mb-2">Khi thiết bị đã được thêm thành công vào tài khoản, bạn cần quay lại trang quản lý của ESP32 (ở bước 1) để cấu hình kết nối tới máy chủ:</p>
+                            <ul class="list-disc list-inside space-y-1.5 ml-1 mt-3 mb-3 text-muted">
+                                <li><strong>MQTT Server:</strong> Nhập địa chỉ IP hoặc tên miền của máy chủ giám sát này.</li>
+                                <li><strong>MQTT Port:</strong> Thường là <code class="bg-surface-alt px-1.5 py-0.5 rounded border border-line">1883</code>.</li>
+                                <li><strong>MQTT User / Password:</strong> Điền thông tin đăng nhập MQTT nếu hệ thống yêu cầu.</li>
+                            </ul>
+                            <p>Lưu cấu hình và khởi động lại ESP32. Thiết bị sẽ bắt đầu đọc dữ liệu từ biến tần (Inverter) và gửi lên hệ thống.</p>
+                        </section>
+
+                        <section>
+                            <h3 class="text-lg font-semibold flex items-center gap-2 mb-3">
+                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-brand-soft text-brand text-sm font-bold">4</span>
+                                Theo dõi dữ liệu
+                            </h3>
+                            <p>Bấm vào thiết bị của bạn trong danh sách bên trái để xem bảng điều khiển chi tiết, theo dõi biểu đồ dữ liệu thời gian thực và lịch sử hoạt động của hệ thống điện năng lượng mặt trời.</p>
+                        </section>
+                    </div>
                 </div>
             </div>
         </div>
