@@ -19,7 +19,7 @@ class DeviceResource extends JsonResource
     public function toArray(Request $request): array
     {
         $user = $request->user();
-        $canSeeCode = $user !== null && ($user->is_admin || $user->id === $this->owner_id);
+        $canSeeCode = $user !== null && $user->isAdmin();
 
         return [
             'serial' => $this->serial,

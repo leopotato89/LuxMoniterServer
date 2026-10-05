@@ -11,10 +11,12 @@ import Modal from '../components/ui/Modal.vue';
 import ToggleSwitch from '../components/ui/ToggleSwitch.vue';
 import { useAuthStore } from '../stores/auth';
 import { useDevicesStore } from '../stores/devices';
+import { useToastStore } from '../stores/toast';
 import api from '../lib/api';
 
 const auth = useAuthStore();
 const devices = useDevicesStore();
+const toast = useToastStore();
 const router = useRouter();
 
 if (!auth.isAdmin) {
@@ -36,6 +38,9 @@ const editSubmitting = ref(false);
 
 const deleteTarget = ref(null);
 const deleteSubmitting = ref(false);
+
+const unclaimTarget = ref(null);
+const unclaimSubmitting = ref(false);
 
 const users = ref([]);
 
@@ -155,6 +160,30 @@ async function confirmDelete() {
         deleteSubmitting.value = false;
     }
 }
+
+async function confirmUnclaim() {
+    unclaimSubmitting.value = true;
+
+    try {
+        const ok = await devices.unclaim(unclaimTarget.value.serial);
+
+        if (ok) {
+            unclaimTarget.value = null;
+        }
+    } finally {
+        unclaimSubmitting.value = false;
+    }
+}
+
+async function copyCode(text) {
+    if (!text) return;
+    try {
+        await navigator.clipboard.writeText(text);
+        toast.success('Đã copy: ' + text);
+    } catch (e) {
+        toast.error('Không thể copy');
+    }
+}
 </script>
 
 <template>
@@ -194,7 +223,14 @@ async function confirmDelete() {
                         >
                             <!-- Header row -->
                             <div class="flex items-start justify-between gap-2">
-                                <h3 class="text-base font-bold text-brand truncate" :title="device.serial">SN: {{ device.serial }}</h3>
+                                <button 
+                                    type="button" 
+                                    class="text-base font-bold text-brand truncate hover:opacity-80 transition text-left focus:outline-none flex items-center gap-1"
+                                    title="Nhấn để copy"
+                                    @click.stop="copyCode(device.serial)"
+                                >
+                                    SN: {{ device.serial }}
+                                </button>
                                 <CheckCircleIcon v-if="device.verified_at" class="h-5 w-5 text-ok shrink-0" title="Đã xác minh" />
                                 <XCircleIcon v-else class="h-5 w-5 text-danger shrink-0" title="Chưa xác minh" />
                             </div>
@@ -203,18 +239,33 @@ async function confirmDelete() {
                             <div class="text-sm text-muted">
                                 <p v-if="device.name" class="truncate">Tên thiết bị: {{ device.name }}</p>
                                 <p class="truncate">Chủ sở hữu: <span v-if="device.owner" class="font-medium text-brand">{{ device.owner.name }}</span><span v-else>Chưa gắn</span></p>
+                                <p v-if="auth.isAdmin" class="truncate font-mono text-xs text-ink mt-0.5">
+                                    Mã TB: 
+                                    <button 
+                                        v-if="device.device_code"
+                                        type="button" 
+                                        class="hover:text-brand transition focus:outline-none"
+                                        title="Nhấn để copy"
+                                        @click.stop="copyCode(device.device_code)"
+                                    >
+                                        {{ device.device_code }}
+                                    </button>
+                                    <span v-else class="text-muted">—</span>
+                                </p>
                             </div>
 
                             <!-- Actions -->
                             <div class="mt-1 pt-2 flex justify-end gap-4 text-sm font-medium border-t border-line/40">
                                 <button
+                                    v-if="auth.isAdmin || auth.user?.id === device.owner?.id"
                                     type="button"
                                     class="text-danger hover:brightness-90 transition"
-                                    @click.stop="deleteTarget = device"
+                                    @click.stop="auth.isAdmin ? deleteTarget = device : unclaimTarget = device"
                                 >
                                     Xóa
                                 </button>
                                 <button
+                                    v-if="auth.isAdmin || auth.user?.id === device.owner?.id"
                                     type="button"
                                     class="text-ink hover:text-brand transition"
                                     @click.stop="openEdit(device)"
@@ -424,6 +475,20 @@ async function confirmDelete() {
                 <Button variant="ghost" @click="deleteTarget = null">Huỷ</Button>
                 <Button variant="danger" :disabled="deleteSubmitting" @click="confirmDelete">
                     {{ deleteSubmitting ? 'Đang xoá…' : 'Xoá' }}
+                </Button>
+            </template>
+        </Modal>
+
+        <!-- Modal: xác nhận huỷ theo dõi (user) -->
+        <Modal :open="unclaimTarget !== null" title="Xóa thiết bị" @close="unclaimTarget = null">
+            <p class="text-sm text-muted">
+                Bạn có chắc chắn muốn xóa thiết bị <strong class="text-ink">{{ unclaimTarget?.serial }}</strong> khỏi danh sách của bạn không?
+            </p>
+
+            <template #footer>
+                <Button variant="ghost" @click="unclaimTarget = null">Huỷ</Button>
+                <Button variant="danger" :disabled="unclaimSubmitting" @click="confirmUnclaim">
+                    {{ unclaimSubmitting ? 'Đang xóa…' : 'Xóa' }}
                 </Button>
             </template>
         </Modal>

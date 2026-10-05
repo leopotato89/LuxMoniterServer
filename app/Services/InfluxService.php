@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -22,7 +23,7 @@ class InfluxService
         string $stop = 'now()',
         string $window = '1m',
     ): array {
-        return \Illuminate\Support\Facades\Cache::remember("influx_history_{$serial}_{$field}_{$start}_{$stop}_{$window}", 60, function () use ($serial, $field, $start, $stop, $window) {
+        return Cache::remember("influx_history_{$serial}_{$field}_{$start}_{$stop}_{$window}", 60, function () use ($serial, $field, $start, $stop, $window) {
             $flux = sprintf(
                 'from(bucket: "%s")
       |> range(start: %s, stop: %s)
@@ -68,7 +69,7 @@ class InfluxService
      */
     public function dashboard(string $serial, string $start, string $stop, string $window): array
     {
-        return \Illuminate\Support\Facades\Cache::remember("influx_dashboard_{$serial}_{$start}_{$stop}_{$window}", 60, function () use ($serial, $start, $stop, $window) {
+        return Cache::remember("influx_dashboard_{$serial}_{$start}_{$stop}_{$window}", 60, function () use ($serial, $start, $stop, $window) {
             $fields = ['battery_soc', 'pv_power', 'accouple_power', 'load_power', 'charge_power', 'discharge_power', 'export_power', 'import_power'];
 
             $flux = sprintf(
@@ -122,7 +123,7 @@ class InfluxService
      */
     public function daily(string $serial, string $date): array
     {
-        return \Illuminate\Support\Facades\Cache::remember("influx_daily_{$serial}_{$date}", 60, function () use ($serial, $date) {
+        return Cache::remember("influx_daily_{$serial}_{$date}", 60, function () use ($serial, $date) {
             $start = Carbon::parse($date, config('app.timezone'))->startOfDay();
             $stop = (clone $start)->addDay();
 
@@ -165,7 +166,7 @@ class InfluxService
      */
     public function dailyEnergy(string $serial, string $start, string $stop): array
     {
-        return \Illuminate\Support\Facades\Cache::remember("influx_dailyEnergy_{$serial}_{$start}_{$stop}", 300, function () use ($serial, $start, $stop) {
+        return Cache::remember("influx_dailyEnergy_{$serial}_{$start}_{$stop}", 300, function () use ($serial, $start, $stop) {
             $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
             $timezone = config('app.timezone');
 
@@ -211,7 +212,7 @@ from(bucket: "%s")
      */
     public function monthlyEnergy(string $serial, string $start, string $stop): array
     {
-        return \Illuminate\Support\Facades\Cache::remember("influx_monthlyEnergy_{$serial}_{$start}_{$stop}", 3600, function () use ($serial, $start, $stop) {
+        return Cache::remember("influx_monthlyEnergy_{$serial}_{$start}_{$stop}", 3600, function () use ($serial, $start, $stop) {
             $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
             $timezone = config('app.timezone');
 
@@ -258,7 +259,7 @@ from(bucket: "%s")
      */
     public function yearlyEnergy(string $serial, string $start = '2020-01-01T00:00:00Z', string $stop = 'now()'): array
     {
-        return \Illuminate\Support\Facades\Cache::remember("influx_yearlyEnergy_{$serial}_{$start}_{$stop}", 3600, function () use ($serial, $start, $stop) {
+        return Cache::remember("influx_yearlyEnergy_{$serial}_{$start}_{$stop}", 3600, function () use ($serial, $start, $stop) {
             $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
             $timezone = config('app.timezone');
 

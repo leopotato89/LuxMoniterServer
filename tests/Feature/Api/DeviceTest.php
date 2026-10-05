@@ -173,16 +173,15 @@ test('admin gán được chủ sở hữu khác', function () {
     expect($device->fresh()->owner_id)->toBe($target->id);
 });
 
-test('admin và chủ sở hữu xoá được thiết bị', function () {
+test('chỉ admin xoá được thiết bị', function () {
     $owner = User::factory()->create();
-    $stranger = User::factory()->create();
     $device = Device::factory()->create(['owner_id' => $owner->id]);
 
-    $this->actingAs($stranger, 'sanctum')
+    $this->actingAs($owner, 'sanctum')
         ->deleteJson("/api/v1/devices/{$device->serial}")
         ->assertForbidden();
 
-    $this->actingAs($owner, 'sanctum')
+    $this->actingAs(User::factory()->create(['is_admin' => true]), 'sanctum')
         ->deleteJson("/api/v1/devices/{$device->serial}")
         ->assertNoContent();
 
@@ -295,19 +294,45 @@ test('history trả dữ liệu từ InfluxService cho chủ sở hữu', functi
         ->assertJsonPath('data.0.value', 1.5);
 });
 
-test('device_code không lộ cho người không phải chủ sở hữu', function () {
+test('device_code chỉ lộ cho admin', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
     $owner = User::factory()->create();
-    $stranger = User::factory()->create();
     $device = Device::factory()->create(['owner_id' => $owner->id, 'device_code' => 'SECRET12']);
+
+    $viaAdmin = Request::create('/');
+    $viaAdmin->setUserResolver(fn () => $admin);
 
     $viaOwner = Request::create('/');
     $viaOwner->setUserResolver(fn () => $owner);
 
-    $viaStranger = Request::create('/');
-    $viaStranger->setUserResolver(fn () => $stranger);
-
-    expect(DeviceResource::make($device->load('owner'))->resolve($viaOwner))
+    expect(DeviceResource::make($device->load('owner'))->resolve($viaAdmin))
         ->toHaveKey('device_code', 'SECRET12')
-        ->and(DeviceResource::make($device->load('owner'))->resolve($viaStranger))
+        ->and(DeviceResource::make($device->load('owner'))->resolve($viaOwner))
         ->not->toHaveKey('device_code');
+});
+
+test('chủ sở hữu huỷ theo dõi (unclaim) thiết bị', function () {
+    $owner = User::factory()->create();
+    $device = Device::factory()->create(['owner_id' => $owner->id, 'verified_at' => now()]);
+
+    $this->actingAs($owner, 'sanctum')
+        ->postJson("/api/v1/devices/{$device->serial}/unclaim")
+        ->assertSuccessful()
+        ->assertJsonPath('message', 'Đã hủy theo dõi thiết bị.');
+
+    $device->refresh();
+    expect($device->owner_id)->toBeNull()
+        ->and($device->verified_at)->toBeNull();
+});
+
+test('người lạ không được unclaim thiết bị', function () {
+    $owner = User::factory()->create();
+    $stranger = User::factory()->create();
+    $device = Device::factory()->create(['owner_id' => $owner->id]);
+
+    $this->actingAs($stranger, 'sanctum')
+        ->postJson("/api/v1/devices/{$device->serial}/unclaim")
+        ->assertForbidden();
+
+    expect($device->fresh()->owner_id)->toBe($owner->id);
 });

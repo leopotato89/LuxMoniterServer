@@ -7,6 +7,7 @@ use App\Http\Requests\Api\V1\StoreDeviceRequest;
 use App\Http\Requests\Api\V1\UpdateDeviceRequest;
 use App\Http\Resources\DeviceResource;
 use App\Models\Device;
+use App\Services\MqttService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -63,6 +64,45 @@ class DeviceController
         return DeviceResource::make($device)->response()->setStatusCode(201);
     }
 
+    /**
+     * Webhook nội bộ: Worker gọi để tạo thiết bị tự động.
+     */
+    public function autoRegister(Request $request, MqttService $mqtt): JsonResponse
+    {
+        $serial = $request->string('serial')->trim()->toString();
+
+        if ($serial === '') {
+            return response()->json(['message' => 'Serial is required'], 400);
+        }
+
+        $device = Device::firstOrCreate(
+            ['serial' => $serial],
+            [
+                'name' => "Inverter {$serial}",
+                'enabled' => true,
+            ]
+        );
+
+        return response()->json($device);
+    }
+
+    /**
+     * Webhook nội bộ: Worker gọi để xác nhận ESP32 đã lưu mã thành công, cần clear Retain.
+     */
+    public function confirmCode(Request $request, MqttService $mqtt): JsonResponse
+    {
+        $serial = $request->string('serial')->trim()->toString();
+
+        if ($serial === '') {
+            return response()->json(['message' => 'Serial is required'], 400);
+        }
+
+        // Publish payload rỗng với retain=true để clear bản tin bị kẹt trên Broker
+        $mqtt->publish("luxmonitor/{$serial}/cmd/set_code", '', 1, true);
+
+        return response()->json(['status' => 'cleared']);
+    }
+
     public function update(UpdateDeviceRequest $request, Device $device): DeviceResource
     {
         $device->update($request->validated());
@@ -115,6 +155,23 @@ class DeviceController
         ]);
 
         return DeviceResource::make($device->loadMissing('owner'))->response()->setStatusCode(201);
+    }
+
+    /**
+     * Người dùng tự hủy theo dõi thiết bị (bỏ quyền sở hữu).
+     */
+    public function unclaim(Device $device, Request $request): JsonResponse
+    {
+        Gate::authorize('update', $device);
+
+        // Đảm bảo chỉ người sở hữu (hoặc admin) mới được huỷ.
+        // Nhưng thường admin sẽ dùng update để đổi chủ, nên cái này chủ yếu cho user.
+        $device->update([
+            'owner_id' => null,
+            'verified_at' => null,
+        ]);
+
+        return response()->json(['message' => 'Đã hủy theo dõi thiết bị.']);
     }
 
     /**

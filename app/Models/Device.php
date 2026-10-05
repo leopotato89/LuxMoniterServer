@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MqttService;
 use Database\Factories\DeviceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,6 +10,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Str;
 
 /**
  * @property int $id
@@ -26,6 +29,28 @@ class Device extends Model
 {
     /** @use HasFactory<DeviceFactory> */
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::creating(function (Device $device) {
+            if (empty($device->device_code)) {
+                $device->device_code = Str::upper(Str::random(6));
+            }
+        });
+
+        static::created(function (Device $device) {
+            app(MqttService::class)->publish(
+                "luxmonitor/{$device->serial}/cmd/set_code",
+                (string) json_encode(['device_code' => $device->device_code]),
+                1,
+                true
+            );
+        });
+
+        static::deleted(function (Device $device) {
+            Redis::srem('devices:known', $device->serial);
+        });
+    }
 
     /**
      * Get the attributes that should be cast.
