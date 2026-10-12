@@ -18,3 +18,8 @@ Broadcast::channel('device.{serial}', function (User $user, string $serial): boo
 
     return $device !== null && $user->can('view', $device);
 });
+
+// Thông báo của user (Notification::broadcast) — chỉ chính user đó được nghe.
+Broadcast::channel('App.Models.User.{id}', function (User $user, int $id): bool {
+    return $user->id === $id;
+});

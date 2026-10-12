@@ -118,6 +118,26 @@ class AuthController
     }
 
     /**
+     * Cập nhật thông tin tài khoản (tên).
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'name' => $validated['name'],
+        ]);
+
+        return response()->json([
+            'message' => 'Cập nhật thông tin thành công.',
+            'data' => new UserResource($user),
+        ]);
+    }
+
+    /**
      * Đổi mật khẩu.
      */
     public function changePassword(ChangePasswordRequest $request): JsonResponse

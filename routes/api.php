@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\Api\DeviceCodeController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\DeviceAlertSettingController;
 use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\DeviceSettingsController;
 use App\Http\Controllers\Api\V1\DeviceTelemetryController;
+use App\Http\Controllers\Api\V1\FcmTokenController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\VerifyWorkerSecret;
@@ -41,6 +44,7 @@ Route::prefix('v1')->group(function (): void {
     // Cần token và phải đang hoạt động
     Route::middleware(['auth:sanctum', EnsureUserIsActive::class])->group(function (): void {
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::put('/auth/password', [AuthController::class, 'changePassword']);
 
@@ -66,6 +70,17 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/devices/{device:serial}/settings/read/{jobId}', [DeviceSettingsController::class, 'getReadResult']);
         Route::put('/devices/{device:serial}/settings/field', [DeviceSettingsController::class, 'updateField']);
         Route::get('/devices/{device:serial}/commands', [DeviceSettingsController::class, 'commands']);
+
+        // Cảnh báo: ngưỡng theo thiết bị, token FCM, lịch sử thông báo
+        Route::get('/devices/{device:serial}/alert-settings', [DeviceAlertSettingController::class, 'show']);
+        Route::put('/devices/{device:serial}/alert-settings', [DeviceAlertSettingController::class, 'update']);
+
+        Route::post('/fcm/tokens', [FcmTokenController::class, 'store']);
+        Route::delete('/fcm/tokens', [FcmTokenController::class, 'destroy']);
+
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
 
         // Users (Admin)
         Route::apiResource('users', UserController::class);

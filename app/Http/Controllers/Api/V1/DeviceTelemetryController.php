@@ -114,17 +114,21 @@ class DeviceTelemetryController
         $type = $validated['type'] ?? 'month';
         $date = $validated['date'] ?? now()->format('Y-m');
 
+        $tz = config('app.timezone');
+
         if ($type === 'year') {
             $yearStr = $date;
-            $start = Carbon::createFromFormat('Y', $yearStr)->startOfYear()->setTimezone('UTC')->toIso8601ZuluString();
-            $stop = Carbon::createFromFormat('Y', $yearStr)->endOfYear()->setTimezone('UTC')->toIso8601ZuluString();
+            $yearCarbon = Carbon::parse($yearStr.'-01-01', $tz)->startOfYear();
+            $start = $yearCarbon->copy()->setTimezone('UTC')->toIso8601ZuluString();
+            $stop = $yearCarbon->copy()->addYear()->setTimezone('UTC')->toIso8601ZuluString();
             $data = $this->influx->monthlyEnergy($device->serial, $start, $stop);
         } elseif ($type === 'all') {
             $data = $this->influx->yearlyEnergy($device->serial, '2020-01-01T00:00:00Z', 'now()');
         } else {
             $monthStr = $date;
-            $start = Carbon::createFromFormat('Y-m', $monthStr)->startOfMonth()->setTimezone('UTC')->toIso8601ZuluString();
-            $stop = Carbon::createFromFormat('Y-m', $monthStr)->endOfMonth()->setTimezone('UTC')->toIso8601ZuluString();
+            $monthCarbon = Carbon::parse($monthStr.'-01', $tz)->startOfMonth();
+            $start = $monthCarbon->copy()->setTimezone('UTC')->toIso8601ZuluString();
+            $stop = $monthCarbon->copy()->addMonth()->setTimezone('UTC')->toIso8601ZuluString();
             $data = $this->influx->dailyEnergy($device->serial, $start, $stop);
         }
 

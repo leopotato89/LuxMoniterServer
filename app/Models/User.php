@@ -70,6 +70,27 @@ class User extends Authenticatable
     }
 
     /**
+     * Token FCM của các điện thoại user đã đăng nhập.
+     *
+     * @return HasMany<DeviceFcmToken, $this>
+     */
+    public function fcmTokens(): HasMany
+    {
+        return $this->hasMany(DeviceFcmToken::class);
+    }
+
+    /**
+     * Nơi gửi thông báo của channel FCM: mọi token của user.
+     *
+     * @return array<int, string>
+     */
+    public function routeNotificationForFcm(): array
+    {
+        /** @var array<int, string> */
+        return $this->fcmTokens()->pluck('fcm_token')->all();
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string

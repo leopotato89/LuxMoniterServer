@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
@@ -83,6 +84,24 @@ class Device extends Model
     public function commands(): HasMany
     {
         return $this->hasMany(DeviceCommand::class);
+    }
+
+    /**
+     * Cấu hình ngưỡng cảnh báo (chưa có bản ghi = dùng mặc định).
+     *
+     * @return HasOne<DeviceAlertSetting, $this>
+     */
+    public function alertSetting(): HasOne
+    {
+        return $this->hasOne(DeviceAlertSetting::class);
+    }
+
+    /**
+     * Cấu hình cảnh báo đang hiệu lực, không lưu DB nếu chưa từng chỉnh.
+     */
+    public function alertSettingOrDefault(): DeviceAlertSetting
+    {
+        return $this->alertSetting ?? new DeviceAlertSetting(DeviceAlertSetting::DEFAULTS);
     }
 
     /**

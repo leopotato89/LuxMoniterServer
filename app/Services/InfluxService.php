@@ -179,7 +179,7 @@ from(bucket: "%s")
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
   |> filter(fn: (r) => %s)
-  |> aggregateWindow(every: 1d, fn: max, createEmpty: false, timeSrc: "_start")
+  |> aggregateWindow(every: 1d, fn: last, createEmpty: false, timeSrc: "_start")
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
                 $timezone,
                 config('influx.bucket'),
@@ -225,7 +225,7 @@ from(bucket: "%s")
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
   |> filter(fn: (r) => %s)
-  |> aggregateWindow(every: 1d, fn: max, createEmpty: false, timeSrc: "_start")
+  |> aggregateWindow(every: 1d, fn: last, createEmpty: false, timeSrc: "_start")
   |> aggregateWindow(every: 1mo, fn: sum, createEmpty: false, timeSrc: "_start")
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
                 $timezone,
@@ -272,7 +272,7 @@ from(bucket: "%s")
   |> filter(fn: (r) => r._measurement == "inverter")
   |> filter(fn: (r) => r.device == "%s")
   |> filter(fn: (r) => %s)
-  |> aggregateWindow(every: 1d, fn: max, createEmpty: false, timeSrc: "_start")
+  |> aggregateWindow(every: 1d, fn: last, createEmpty: false, timeSrc: "_start")
   |> aggregateWindow(every: 1y, fn: sum, createEmpty: false, timeSrc: "_start")
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")',
                 $timezone,
@@ -416,6 +416,9 @@ from(bucket: "%s")
 
     /**
      * Parse CSV pivoted (cột _time + các field *_energy_day) thành mảng với định dạng thời gian chỉ định.
+     *
+     * @param  list<string>  $fields
+     * @return array<string, array<string, float>>
      */
     protected function parseEnergyCsvWithFormat(string $csv, array $fields, string $format = 'Y-m'): array
     {
