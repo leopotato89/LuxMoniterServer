@@ -52,7 +52,13 @@ async function submit() {
                     <label for="password" class="block text-sm font-medium text-ink">
                         Mật khẩu <span class="text-brand">*</span>
                     </label>
-                    <RouterLink to="/forgot-password" class="text-xs font-semibold text-brand transition hover:text-brand-strong">Quên mật khẩu?</RouterLink>
+                    <RouterLink
+                        to="/forgot-password"
+                        tabindex="-1"
+                        class="text-xs font-semibold text-brand transition hover:text-brand-strong"
+                    >
+                        Quên mật khẩu?
+                    </RouterLink>
                 </div>
                 <div class="relative">
                     <input
