@@ -23,7 +23,7 @@ const props = defineProps({
   },
   params: {
     type: Object,
-    default: () => ({ start: '-24h', window: '15m' })
+    default: () => ({ start: '-24h', window: '5m' })
   }
 })
 

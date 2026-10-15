@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\DeviceController;
 use App\Http\Controllers\Api\V1\DeviceSettingsController;
 use App\Http\Controllers\Api\V1\DeviceTelemetryController;
 use App\Http\Controllers\Api\V1\FcmTokenController;
+use App\Http\Controllers\Api\V1\FirmwareController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Middleware\EnsureUserIsActive;
@@ -40,6 +41,7 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:login');
     Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:login');
     Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:login');
+    Route::get('/firmware/manifest', [FirmwareController::class, 'manifest']);
 
     // Cần token và phải đang hoạt động
     Route::middleware(['auth:sanctum', EnsureUserIsActive::class])->group(function (): void {
@@ -70,6 +72,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/devices/{device:serial}/settings/read/{jobId}', [DeviceSettingsController::class, 'getReadResult']);
         Route::put('/devices/{device:serial}/settings/field', [DeviceSettingsController::class, 'updateField']);
         Route::get('/devices/{device:serial}/commands', [DeviceSettingsController::class, 'commands']);
+        Route::post('/devices/{device:serial}/ota', [FirmwareController::class, 'triggerOta']);
 
         // Cảnh báo: ngưỡng theo thiết bị, token FCM, lịch sử thông báo
         Route::get('/devices/{device:serial}/alert-settings', [DeviceAlertSettingController::class, 'show']);

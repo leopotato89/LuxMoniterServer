@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
-import { UsersIcon, ArrowRightOnRectangleIcon, ChevronDownIcon, KeyIcon } from '@heroicons/vue/24/outline';
+import { UsersIcon, ArrowRightOnRectangleIcon, ChevronDownIcon, KeyIcon, BoltIcon, CpuChipIcon, BookOpenIcon } from '@heroicons/vue/24/outline';
 import LogoMark from '../components/ui/LogoMark.vue';
 import ThemeToggle from '../components/ui/ThemeToggle.vue';
 import Toaster from '../components/ui/Toaster.vue';
@@ -48,9 +48,18 @@ onUnmounted(() => {
                 </RouterLink>
 
                 <div class="ml-auto flex items-center gap-2">
+                    <RouterLink
+                        to="/guide"
+                        class="flex items-center gap-1.5 rounded-field px-2.5 py-1.5 text-xs font-semibold text-muted hover:text-brand hover:bg-brand-soft transition"
+                        title="Hướng dẫn cài đặt & sử dụng"
+                    >
+                        <BookOpenIcon class="w-4 h-4 text-brand" />
+                        <span class="hidden sm:inline">Hướng dẫn</span>
+                    </RouterLink>
+
                     <ThemeToggle />
 
-                    <div class="relative" ref="userMenuRef">
+                    <div v-if="auth.isAuthenticated" class="relative" ref="userMenuRef">
                         <button
                             type="button"
                             class="flex items-center gap-2 rounded-field p-1 pr-2 text-left transition hover:bg-brand-soft focus:outline-none"
@@ -89,6 +98,16 @@ onUnmounted(() => {
 
                             <RouterLink
                                 v-if="auth.isAdmin"
+                                :to="{ name: 'admin.devices' }"
+                                class="flex w-full items-center gap-2.5 rounded-field px-3 py-2 text-left text-sm font-medium text-muted transition hover:bg-brand-soft hover:text-brand-strong"
+                                active-class="!bg-brand-soft !text-brand-strong"
+                                @click="userMenuOpen = false"
+                            >
+                                <CpuChipIcon class="h-4 w-4" />
+                                Quản lý thiết bị
+                            </RouterLink>
+                            <RouterLink
+                                v-if="auth.isAdmin"
                                 :to="{ name: 'admin.users' }"
                                 class="flex w-full items-center gap-2.5 rounded-field px-3 py-2 text-left text-sm font-medium text-muted transition hover:bg-brand-soft hover:text-brand-strong"
                                 active-class="!bg-brand-soft !text-brand-strong"
@@ -96,6 +115,15 @@ onUnmounted(() => {
                             >
                                 <UsersIcon class="h-4 w-4" />
                                 Người dùng
+                            </RouterLink>
+                            <RouterLink
+                                to="/guide"
+                                class="flex w-full items-center gap-2.5 rounded-field px-3 py-2 text-left text-sm font-medium text-muted transition hover:bg-brand-soft hover:text-brand-strong"
+                                active-class="!bg-brand-soft !text-brand-strong"
+                                @click="userMenuOpen = false"
+                            >
+                                <BookOpenIcon class="h-4 w-4" />
+                                Hướng dẫn sử dụng
                             </RouterLink>
                             <button
                                 type="button"
@@ -115,6 +143,13 @@ onUnmounted(() => {
                             </button>
                         </div>
                     </div>
+                    <RouterLink
+                        v-else
+                        to="/login"
+                        class="rounded-field px-3 py-1.5 text-xs font-semibold text-muted hover:text-ink hover:bg-brand-soft transition"
+                    >
+                        Đăng nhập
+                    </RouterLink>
                 </div>
             </div>
         </header>

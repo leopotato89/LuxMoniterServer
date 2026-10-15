@@ -1,7 +1,7 @@
 # LuxMonitor Mobile App — Kế hoạch Triển khai & Task List
 
-> **Phiên bản:** 1.3  
-> **Ngày cập nhật:** 2026-10-09  
+> **Phiên bản:** 1.4  
+> **Ngày cập nhật:** 2026-10-13  
 > **Đối tượng sử dụng:** End-User (Chủ sở hữu biến tần LuxPower, **KHÔNG bao gồm các chức năng Admin**).  
 > **Mục tiêu:** Xây dựng ứng dụng di động hoàn chỉnh đa nền tảng (iOS & Android) giám sát thời gian thực, thống kê sản lượng, cài đặt biến tần từ xa.  
 > **Cơ chế Cấu hình Tối ưu:** Bluetooth (BLE) **chỉ dùng duy nhất để cài đặt WiFi gia đình**. Ngay khi ESP32 có IP LAN, Bluetooth được **ngắt và tắt hoàn toàn**. Mọi thao tác sau đó (dò Dongle, nạp cấu hình Dongle, lấy mã xác minh Claim) được Mobile App thực hiện **trực tiếp qua HTTP API trên mạng LAN**.
@@ -206,6 +206,48 @@ Quy trình này chia làm 2 giai đoạn rõ ràng:
 - Cơ chế chống Spam (Anti-spam / Cooldown):
   - Cache/Redis lock và lưu vết step: pin không báo lại cùng mức trong 1 giờ; lỗi và mất kết nối có cooldown 15 phút.
 
+
+---
+
+### Trụ cột 4: Quản lý Vòng đời Firmware — Web Flasher (Lần đầu / USB) & Cloud OTA Update (Từ xa)
+
+Hệ thống cung cấp 2 giải pháp nạp firmware đồng bộ khép kín:
+1. **Web Flasher (Nạp lần đầu qua USB / Cứu hộ)**: Dành cho mạch mới mua xuất xưởng hoặc khi mạch bị lỗi mất cấu hình mạng.
+2. **Cloud OTA Update (Nâng cấp từ xa qua Internet)**: Dành cho toàn bộ quá trình sử dụng thường ngày, thực hiện chỉ với 1 chạm từ Mobile App hoặc Web Portal mà không cần tháo mạch ra khỏi tủ điện.
+
+#### 1. Đặc tả Trang Web Flasher (Web-based USB Flasher):
+- **Công nghệ cốt lõi**: `esptool-js` (thư viện chính thức từ Espressif Systems) chạy trên Web Serial API.
+- **Môi trường hỗ trợ**:
+  - **Máy tính (PC/Laptop)**: Các trình duyệt nhân Chromium (Google Chrome, Microsoft Edge, Brave, Cốc Cốc) qua cáp USB.
+  - **Điện thoại di động (Mobile)**: **Chỉ hỗ trợ trên hệ điều hành Android** (thông qua trình duyệt Google Chrome kết nối cáp OTG Type-C sang ESP32). iOS không hỗ trợ do chính sách bảo mật khóa cổng Serial của Apple.
+- **Cơ chế Nhận diện Chip Tự động**:
+  - Khi người dùng bấm "Kết nối", `esptool-js` đồng bộ bootloader và đọc thanh ghi phần cứng:
+    - Nếu là `ESP32` (D0WD/V3...): Tự động chọn gói firmware `devkit` (`esp32dev`).
+    - Nếu là `ESP32-C3`: Tự động chọn gói firmware `c3` (`esp32-c3-devkitm-1`).
+    - Nếu cắm chip không hợp lệ: Hiển thị cảnh báo từ chối nạp.
+- **2 Phương thức Nạp Firmware**:
+  - **Phương thức 1: Cài mới hoàn toàn (Full Install / Khôi phục xuất xưởng)**:
+    - Xóa sạch toàn bộ bộ nhớ flash (`eraseFlash = true`).
+    - Nạp đầy đủ các phân vùng: `bootloader.bin` (offset 0x0/0x1000), `partitions.bin` (0x8000), `boot_app0.bin` (0xe000), `firmware.bin` (0x10000) và `littlefs.bin` (nếu có).
+    - Dành cho: Bo mạch mới mua trắng tinh, hoặc nạp lại khi mạch bị lỗi phân vùng.
+  - **Phương thức 2: Cập nhật FW giữ nguyên cấu hình (Update / Keep Settings)**:
+    - **Không xóa flash**.
+    - **Chỉ nạp đè `firmware.bin`** vào phân vùng ứng dụng (`0x10000`).
+    - Dành cho: Nâng cấp tính năng mới mà **giữ nguyên 100% cấu hình WiFi, IP Dongle và mã `device_code`** trong bộ nhớ NVS.
+- **Hỗ trợ Driver & Xử lý sự cố Thông minh (Smart Fallback)**:
+  - Nếu danh sách cổng COM trống hoặc người dùng bấm hủy: Web tự động hiển thị popup gợi ý kèm nút tải **Driver 1-Click** lưu trực tiếp trên Server (Bộ cài tự động `CP210x Driver` của Silicon Labs và `CH341SER.EXE` của WCH).
+  - Hướng dẫn thao tác nút bấm BOOT: Hướng dẫn giữ nút BOOT trong 3 giây khi cắm cáp đối với các bo mạch DevKit giá rẻ không có mạch tự động reset.
+
+#### 2. Đặc tả Cập nhật Firmware từ xa (Cloud OTA Update):
+- **Cơ chế phân vùng kép an toàn (`Dual-Partition OTA`)**:
+  - Bảng phân vùng `default_ota_4MB.csv` chia bộ nhớ 4MB thành 2 phân vùng ứng dụng chạy luân phiên `ota_0` và `ota_1` (~1.4MB mỗi phân vùng).
+  - Mạch luôn nạp vào phân vùng dự phòng. Nếu quá trình tải bị mất điện, mất WiFi hoặc file hỏng mã MD5, bootloader tự động giữ nguyên phiên bản cũ và khởi động lại an toàn, **không bao giờ bị brick/treo mạch**.
+- **Luồng kích hoạt từ xa (Remote Trigger)**:
+  1. Người dùng bấm nút **[Cập nhật Firmware]** trên Mobile App hoặc Web Portal.
+  2. Server gửi lệnh MQTT: `luxmonitor/<serial>/cmd/ota` kèm URL firmware (`https://.../firmware/{board}/vX.X.bin`) và mã băm MD5.
+  3. Module `HTTPUpdate` trên ESP32 tự động tải về qua HTTPS, ghi flash và phản hồi tiến trình % ngược lại MQTT để Web/Mobile hiển thị thanh loading.
+  4. Sau khi hoàn tất và kiểm tra toàn vẹn thành công, ESP32 tự reboot vào bản mới và giữ nguyên toàn bộ cấu hình mạng/NVS.
+
 ---
 
 ## 4. Kế hoạch Triển khai Chi tiết (Task Lists)
@@ -256,6 +298,42 @@ Quy trình này chia làm 2 giai đoạn rõ ràng:
   - Subscribe topic `luxmonitor/<serial>/cmd/set_code` (retained từ Server).
   - Khi nhận mã, lưu vào NVS (`Preferences` namespace `"device"`) và gửi ACK lên `cmd/result`.
 - [ ] **Task 2.4**: Nút bấm BOOT (GPIO9): Nhấn giữ 3 giây để bật lại BLE trong vòng 3 phút khi người dùng muốn đổi WiFi.
+- [ ] **Task 2.5**: Cấu hình Partition Table Dual OTA & Module Cloud OTA trên Firmware ESP32
+  - Cấu hình `board_build.partitions = default_ota_4MB.csv` trong `platformio.ini` cho cả `devkit` và `c3` (chia 2 phân vùng `ota_0` và `ota_1` ~1.4MB).
+  - Tích hợp `#include <HTTPUpdate.h>` xử lý cập nhật OTA an toàn qua HTTPS.
+  - Subscribe MQTT topic `luxmonitor/<serial>/cmd/ota` nhận payload `{ url, md5, version }`.
+  - Gửi bản tin tiến trình % nạp về topic `luxmonitor/<serial>/cmd/result` và tự khởi động lại vào phân vùng mới sau khi nạp thành công.
+
+---
+
+### Giai đoạn 2B: Trang Web Flasher & Hạ tầng Cloud OTA Firmware
+
+- [x] **Task 2B.1**: Quản lý Kho Firmware & Manifest trên Cloud Server (`LuxMoniterServer`)
+  - Thư mục lưu trữ binaries: `public/firmware/{board_type}/` (`devkit` và `c3`).
+  - File `manifest.json`: Chứa phiên bản mới nhất, changelog, md5 hash, và offset các phân vùng (`bootloader`, `partitions`, `boot_app0`, `firmware`, `littlefs`).
+  - API Backend:
+    - `GET /api/v1/firmware/manifest`: Trả về thông tin phiên bản và danh sách file binary cho Web Flasher.
+    - `POST /api/v1/devices/{serial}/ota`: Gửi lệnh MQTT `cmd/ota` kích hoạt nạp từ xa cho thiết bị cụ thể.
+- [x] **Task 2B.2**: Xây dựng Trang Web Flasher (`/flash`) trên Vue 3 SPA
+  - Cài đặt thư viện `esptool-js` (Espressif Systems).
+  - Route công khai: `/flash` trong Vue Router (truy cập trực tiếp không bắt buộc đăng nhập, có thể dùng từ máy tính hoặc điện thoại Android cáp OTG).
+  - Giao diện thân thiện, chuẩn theme LuxMonitor:
+    - Nút lớn "Kết nối Thiết bị & Nạp Firmware".
+    - Thanh đo tiến trình % kèm thông số tốc độ nạp (Baudrate 460800 / 921600).
+    - Khung Log Terminal thu gọn hiển thị thông tin MAC, Flash Size, loại chip.
+- [x] **Task 2B.3**: Tính năng Tự động Nhận diện Chip & 2 Chế độ Nạp
+  - Đọc thanh ghi phần cứng khi kết nối cổng COM: Tự động phát hiện `ESP32` hay `ESP32-C3` để tải đúng bộ binary tương ứng.
+  - Radio/Toggle chọn 2 chế độ:
+    - **Cài mới hoàn toàn (Full Install)**: Xóa toàn bộ Flash ➔ Nạp đủ 4-5 file phân vùng (cho mạch mới).
+    - **Cập nhật FW giữ cấu hình (Keep Settings)**: Chỉ nạp đè file `firmware.bin` vào offset `0x10000` (giữ nguyên WiFi, IP Dongle, device_code trong NVS).
+- [x] **Task 2B.4**: Tích hợp Bộ tải Driver USB 1-Click & Hướng dẫn Trực quan
+  - Tự động bắt sự kiện danh sách COM trống / bấm hủy ➔ Bật popup gợi ý Driver.
+  - Nút tải trực tiếp từ server: `CP210x Windows Driver` (Silicon Labs) và `CH341SER.EXE` (WCH).
+  - Hướng dẫn bằng ảnh minh họa: Hướng dẫn cắm cáp OTG Type-C trên Android, mẹo nhấn giữ nút BOOT trong 3 giây khi nạp mạch DevKit.
+- [x] **Task 2B.5**: Tích hợp Giao diện Kiểm tra & Kích hoạt OTA trên Mobile App (Flutter) và Web Portal
+  - Thẻ thông tin phiên bản firmware trong trang Cài đặt thiết bị / Device Info.
+  - Tự động so sánh phiên bản đang chạy với bản mới nhất trên Server.
+  - Huy hiệu "Có bản cập nhật mới" kèm nút bấm [Nâng cấp OTA ngay] ➔ Hiển thị dialog xác nhận và theo dõi tiến trình nạp trực tiếp.
 
 ---
 
@@ -336,6 +414,9 @@ Quy trình này chia làm 2 giai đoạn rõ ràng:
 - [x] **Task 5.4**: Màn hình Biểu đồ 24 Giờ & Biểu đồ Hôm nay (Timeline Charts)
   - Vẽ đồ thị 5 đường bằng `fl_chart`: SOC (trục phụ 0-100%), PV, Tải, Sạc/Xả net, Lưới net.
   - Tối ưu không gian hiển thị (Compact Chart): Giảm tối đa padding viền card và độ rộng trục Y để đường biểu đồ to, rõ ràng và sắc nét.
+  - Tăng độ dày mật độ lấy mẫu lên 5 phút/lần (`window=5m`) đồng bộ cả Backend Laravel InfluxDB, Web và Mobile.
+  - Tooltip biểu đồ dây tinh gọn: chỉ hiển thị giờ:phút `HH:mm` in đậm, loại bỏ tiền tố và ngày tháng rườm rà.
+  - Tooltip biểu đồ tròn KPI: Hiển thị phân bổ chi tiết sản lượng (Cấp tải, Sạc pin, Đẩy lưới) và nguồn cấp tiêu thụ (Trực tiếp, Xả pin, Kéo lưới) kèm sản lượng (kWh) và tỷ lệ phần trăm (%).
   - Thanh chọn ngày (Hôm nay, Hôm qua, DatePicker linh hoạt).
 - [x] **Task 5.5**: Màn hình Thống kê Sản lượng (Energy Analytics)
   - Biểu đồ cột phân chia màu theo: PV tạo ra, Lưới mua vào, Bán lên lưới, Năng lượng sạc/xả.

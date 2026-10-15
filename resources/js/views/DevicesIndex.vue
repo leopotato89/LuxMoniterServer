@@ -5,10 +5,13 @@ import {
     CheckCircleIcon,
     PlusIcon,
     XCircleIcon,
+    BoltIcon,
+    ArrowTopRightOnSquareIcon,
 } from '@heroicons/vue/24/outline';
 import Button from '../components/ui/Button.vue';
 import Modal from '../components/ui/Modal.vue';
 import ToggleSwitch from '../components/ui/ToggleSwitch.vue';
+import EnergyDiagram from '../components/realtime/EnergyDiagram.vue';
 import { useAuthStore } from '../stores/auth';
 import { useDevicesStore } from '../stores/devices';
 import { useToastStore } from '../stores/toast';
@@ -18,6 +21,47 @@ const auth = useAuthStore();
 const devices = useDevicesStore();
 const toast = useToastStore();
 const router = useRouter();
+
+const pinnedSerial = ref(localStorage.getItem('luxmonitor_pinned_device') || '');
+const selectedSerial = ref('');
+
+// Thiết bị hiển thị trên Diagram:
+// 1. Ưu tiên click chọn hiện tại
+// 2. Nếu không có click, chọn thiết bị được ghim
+// 3. Nếu chưa ghim, chọn thiết bị đầu tiên trong danh sách
+const activeDevice = computed(() => {
+    if (!devices.items || devices.items.length === 0) return null;
+
+    if (selectedSerial.value) {
+        const found = devices.items.find(d => d.serial === selectedSerial.value);
+        if (found) return found;
+    }
+
+    if (pinnedSerial.value) {
+        const found = devices.items.find(d => d.serial === pinnedSerial.value);
+        if (found) return found;
+    }
+
+    return devices.items[0];
+});
+
+function togglePin(device, event) {
+    if (event) event.stopPropagation();
+    if (pinnedSerial.value === device.serial) {
+        pinnedSerial.value = '';
+        localStorage.removeItem('luxmonitor_pinned_device');
+        toast.info(`Đã bỏ ghim ${device.name || device.serial}`);
+    } else {
+        pinnedSerial.value = device.serial;
+        selectedSerial.value = device.serial;
+        localStorage.setItem('luxmonitor_pinned_device', device.serial);
+        toast.success(`Đã ghim ${device.name || device.serial} lên màn hình chính`);
+    }
+}
+
+function selectDevice(device) {
+    selectedSerial.value = device.serial;
+}
 
 if (!auth.isAdmin) {
     devices.filters.per_page = 5;
@@ -188,9 +232,9 @@ async function copyCode(text) {
 
 <template>
     <div class="space-y-4">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Danh sách thiết bị (1/3) -->
-            <div class="lg:col-span-1">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Danh sách thiết bị (4/12 phần) -->
+            <div class="lg:col-span-4">
                 <div class="x-rounded-card p-0 flex flex-col overflow-hidden">
                     <!-- Header & Bộ lọc -->
                     <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-line">
@@ -218,27 +262,61 @@ async function copyCode(text) {
                         <div 
                             v-for="device in devices.items" 
                             :key="device.serial" 
-                            class="rounded-xl border border-line bg-surface shadow-sm p-4 transition hover:border-brand/50 hover:shadow-md cursor-pointer flex flex-col gap-2"
-                            @click="router.push({ name: 'devices.show', params: { serial: device.serial } })"
+                            class="rounded-xl border p-4 transition cursor-pointer flex flex-col gap-2"
+                            :class="activeDevice?.serial === device.serial ? 'border-brand bg-brand-soft/20 shadow-sm ring-1 ring-brand/50' : 'border-line hover:border-brand/40 bg-surface shadow-sm hover:shadow-md'"
+                            @click="selectDevice(device)"
                         >
                             <!-- Header row -->
                             <div class="flex items-start justify-between gap-2">
-                                <button 
-                                    type="button" 
-                                    class="text-base font-bold text-brand truncate hover:opacity-80 transition text-left focus:outline-none flex items-center gap-1"
-                                    title="Nhấn để copy"
-                                    @click.stop="copyCode(device.serial)"
-                                >
-                                    SN: {{ device.serial }}
-                                </button>
-                                <CheckCircleIcon v-if="device.verified_at" class="h-5 w-5 text-ok shrink-0" title="Đã xác minh" />
-                                <XCircleIcon v-else class="h-5 w-5 text-danger shrink-0" title="Chưa xác minh" />
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <button 
+                                        type="button" 
+                                        class="text-base font-bold text-brand truncate hover:opacity-80 transition text-left focus:outline-none flex items-center gap-1"
+                                        title="Nhấn để copy"
+                                        @click.stop="copyCode(device.serial)"
+                                    >
+                                        SN: {{ device.serial }}
+                                    </button>
+                                    <span
+                                        v-if="pinnedSerial === device.serial"
+                                        class="inline-flex items-center rounded bg-amber-500/10 px-1.5 py-0.2 text-[9px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0"
+                                        title="Thiết bị được ghim"
+                                    >
+                                        Ghim
+                                    </span>
+                                </div>
+
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                    <!-- Nút Ghim -->
+                                    <button
+                                        type="button"
+                                        class="p-1 rounded-md transition hover:bg-black/5 dark:hover:bg-white/5 focus:outline-none"
+                                        :title="pinnedSerial === device.serial ? 'Bỏ ghim' : 'Ghim thiết bị này'"
+                                        @click.stop="togglePin(device, $event)"
+                                    >
+                                        <svg
+                                            class="w-4 h-4 transition"
+                                            :class="pinnedSerial === device.serial ? 'text-amber-500 fill-amber-500' : 'text-muted hover:text-ink'"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
+                                            <line x1="12" y1="17" x2="12" y2="22"></line>
+                                            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
+                                        </svg>
+                                    </button>
+
+                                    <CheckCircleIcon v-if="device.verified_at" class="h-5 w-5 text-ok shrink-0" title="Đã xác minh" />
+                                    <XCircleIcon v-else class="h-5 w-5 text-danger shrink-0" title="Chưa xác minh" />
+                                </div>
                             </div>
 
                             <!-- Text block -->
                             <div class="text-sm text-muted">
-                                <p v-if="device.name" class="truncate">Tên thiết bị: {{ device.name }}</p>
-                                <p class="truncate">Chủ sở hữu: <span v-if="device.owner" class="font-medium text-brand">{{ device.owner.name }}</span><span v-else>Chưa gắn</span></p>
+                                <p v-if="device.name" class="truncate font-medium text-ink">Tên: {{ device.name }}</p>
+                                <p class="truncate text-xs mt-0.5">Chủ sở hữu: <span v-if="device.owner" class="font-medium text-brand">{{ device.owner.name }}</span><span v-else>Chưa gắn</span></p>
                                 <p v-if="auth.isAdmin" class="truncate font-mono text-xs text-ink mt-0.5">
                                     Mã TB: 
                                     <button 
@@ -255,23 +333,34 @@ async function copyCode(text) {
                             </div>
 
                             <!-- Actions -->
-                            <div class="mt-1 pt-2 flex justify-end gap-4 text-sm font-medium border-t border-line/40">
+                            <div class="mt-1 pt-2 flex items-center justify-between text-xs font-medium border-t border-line/40">
                                 <button
-                                    v-if="auth.isAdmin || auth.user?.id === device.owner?.id"
                                     type="button"
-                                    class="text-danger hover:brightness-90 transition"
-                                    @click.stop="auth.isAdmin ? deleteTarget = device : unclaimTarget = device"
+                                    class="inline-flex items-center gap-1 text-brand hover:underline font-semibold"
+                                    @click.stop="router.push({ name: 'devices.show', params: { serial: device.serial } })"
                                 >
-                                    Xóa
+                                    <span>Chi tiết</span>
+                                    <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5" />
                                 </button>
-                                <button
-                                    v-if="auth.isAdmin || auth.user?.id === device.owner?.id"
-                                    type="button"
-                                    class="text-ink hover:text-brand transition"
-                                    @click.stop="openEdit(device)"
-                                >
-                                    Sửa
-                                </button>
+
+                                <div class="flex items-center gap-3">
+                                    <button
+                                        v-if="auth.isAdmin || auth.user?.id === device.owner?.id"
+                                        type="button"
+                                        class="text-ink hover:text-brand transition"
+                                        @click.stop="openEdit(device)"
+                                    >
+                                        Sửa
+                                    </button>
+                                    <button
+                                        v-if="auth.isAdmin || auth.user?.id === device.owner?.id"
+                                        type="button"
+                                        class="text-danger hover:brightness-90 transition"
+                                        @click.stop="auth.isAdmin ? deleteTarget = device : unclaimTarget = device"
+                                    >
+                                        Xóa
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -321,54 +410,86 @@ async function copyCode(text) {
                 </div>
             </div>
 
-            <!-- Hướng dẫn (2/3) -->
-            <div class="lg:col-span-1">
-                <div class="p-2 lg:p-6">
-                    <h2 class="text-xl font-bold text-brand mb-6 border-b border-line pb-4">Hướng dẫn cài đặt & Kết nối thiết bị</h2>
-                    
-                    <div class="space-y-8 text-ink text-sm lg:text-base leading-relaxed">
-                        <section>
-                            <h3 class="text-lg font-semibold flex items-center gap-2 mb-3">
-                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-brand-soft text-brand text-sm font-bold">1</span>
-                                Lấy thông tin từ ESP32
-                            </h3>
-                            <p class="mb-2">Để thêm thiết bị vào hệ thống, bạn cần kết nối vào mạng WiFi do bộ theo dõi (ESP32) phát ra. Mạng này thường có tên dạng <code class="bg-surface-alt px-1.5 py-0.5 rounded border border-line text-brand">LuxMonitor_XXXX</code>.</p>
-                            <p>Sau khi kết nối WiFi, hãy mở trình duyệt web và truy cập vào địa chỉ <code class="bg-surface-alt px-1.5 py-0.5 rounded border border-line text-brand">http://192.168.4.1</code>.</p>
-                            <p class="mt-2">Tại trang quản lý của ESP32, bạn sẽ thấy thông tin <strong>Serial</strong> và <strong>Mã thiết bị (Device Code)</strong>. Hãy ghi lại hoặc copy hai thông tin này.</p>
-                        </section>
+            <!-- Cột bên phải: Diagram thiết bị được ghim / chọn (8/12 phần) -->
+            <div class="lg:col-span-8">
+                <div v-if="activeDevice" class="x-rounded-card p-0 flex flex-col overflow-hidden">
+                    <!-- Header của Diagram Card -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-line bg-surface/50">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="rounded-lg bg-brand-soft p-1.5 text-brand shrink-0">
+                                <BoltIcon class="w-5 h-5" />
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                    <h2 class="text-base font-bold text-ink truncate">
+                                        {{ activeDevice.name || activeDevice.serial }}
+                                    </h2>
+                                    <span
+                                        v-if="pinnedSerial === activeDevice.serial"
+                                        class="inline-flex items-center gap-1 rounded bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0"
+                                    >
+                                        <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
+                                        </svg>
+                                        Đã ghim
+                                    </span>
+                                </div>
+                                <span class="text-xs font-mono text-muted">SN: {{ activeDevice.serial }}</span>
+                            </div>
+                        </div>
 
-                        <section>
-                            <h3 class="text-lg font-semibold flex items-center gap-2 mb-3">
-                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-brand-soft text-brand text-sm font-bold">2</span>
-                                Thêm thiết bị vào tài khoản
-                            </h3>
-                            <p class="mb-2">Nhấn vào nút <strong>Thêm thiết bị giám sát</strong> ở góc trên bên phải của trang này.</p>
-                            <p>Nhập <strong>Serial</strong> và <strong>Mã thiết bị</strong> vừa lấy được ở bước 1 vào biểu mẫu và xác nhận.</p>
-                            <p class="mt-2">Nếu thông tin hợp lệ, thiết bị sẽ được thêm vào danh sách bên trái và hiển thị trạng thái <span class="inline-flex items-center gap-1 text-ok font-medium"><CheckCircleIcon class="w-4 h-4" /> Đã xác minh</span>.</p>
-                        </section>
-                        
-                        <section>
-                            <h3 class="text-lg font-semibold flex items-center gap-2 mb-3">
-                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-brand-soft text-brand text-sm font-bold">3</span>
-                                Cấu hình MQTT cho ESP32
-                            </h3>
-                            <p class="mb-2">Khi thiết bị đã được thêm thành công vào tài khoản, bạn cần quay lại trang quản lý của ESP32 (ở bước 1) để cấu hình kết nối tới máy chủ:</p>
-                            <ul class="list-disc list-inside space-y-1.5 ml-1 mt-3 mb-3 text-muted">
-                                <li><strong>MQTT Server:</strong> Nhập địa chỉ IP hoặc tên miền của máy chủ giám sát này.</li>
-                                <li><strong>MQTT Port:</strong> Thường là <code class="bg-surface-alt px-1.5 py-0.5 rounded border border-line">1883</code>.</li>
-                                <li><strong>MQTT User / Password:</strong> Điền thông tin đăng nhập MQTT nếu hệ thống yêu cầu.</li>
-                            </ul>
-                            <p>Lưu cấu hình và khởi động lại ESP32. Thiết bị sẽ bắt đầu đọc dữ liệu từ biến tần (Inverter) và gửi lên hệ thống.</p>
-                        </section>
+                        <div class="flex items-center gap-2">
+                            <!-- Nút Ghim / Bỏ ghim -->
+                            <button
+                                type="button"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs font-semibold text-muted hover:text-ink hover:bg-black/5 dark:hover:bg-white/5 transition"
+                                @click="togglePin(activeDevice)"
+                            >
+                                <svg
+                                    class="w-3.5 h-3.5"
+                                    :class="pinnedSerial === activeDevice.serial ? 'text-amber-500 fill-amber-500' : 'text-muted'"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>
+                                </svg>
+                                <span>{{ pinnedSerial === activeDevice.serial ? 'Bỏ ghim' : 'Ghim thiết bị' }}</span>
+                            </button>
 
-                        <section>
-                            <h3 class="text-lg font-semibold flex items-center gap-2 mb-3">
-                                <span class="flex items-center justify-center w-6 h-6 rounded-full bg-brand-soft text-brand text-sm font-bold">4</span>
-                                Theo dõi dữ liệu
-                            </h3>
-                            <p>Bấm vào thiết bị của bạn trong danh sách bên trái để xem bảng điều khiển chi tiết, theo dõi biểu đồ dữ liệu thời gian thực và lịch sử hoạt động của hệ thống điện năng lượng mặt trời.</p>
-                        </section>
+                            <RouterLink
+                                :to="{ name: 'devices.show', params: { serial: activeDevice.serial } }"
+                                class="inline-flex items-center gap-1 rounded-lg bg-brand px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:brightness-110 transition"
+                            >
+                                <span>Xem chi tiết</span>
+                                <ArrowTopRightOnSquareIcon class="w-3.5 h-3.5" />
+                            </RouterLink>
+                        </div>
                     </div>
+
+                    <!-- Diagram Container -->
+                    <div class="p-2 sm:p-4">
+                        <EnergyDiagram :key="activeDevice.serial" :serial="activeDevice.serial" />
+                    </div>
+                </div>
+
+                <!-- Empty state khi chưa có thiết bị nào -->
+                <div v-else class="x-rounded-card p-12 text-center text-muted flex flex-col items-center justify-center gap-3">
+                    <div class="rounded-full bg-brand-soft p-4 text-brand">
+                        <BoltIcon class="w-8 h-8" />
+                    </div>
+                    <h3 class="text-base font-bold text-ink">Chưa có thiết bị nào</h3>
+                    <p class="text-sm max-w-sm text-muted">
+                        Hãy thêm thiết bị giám sát ESP32 vào tài khoản để theo dõi sơ đồ luồng năng lượng mặt trời thời gian thực.
+                    </p>
+                    <Button v-if="auth.isAdmin" size="sm" @click="createOpen = true">
+                        <PlusIcon class="h-4 w-4" />
+                        Tạo thiết bị ngay
+                    </Button>
+                    <Button v-else size="sm" @click="claimOpen = true">
+                        <PlusIcon class="h-4 w-4" />
+                        Thêm thiết bị ngay
+                    </Button>
                 </div>
             </div>
         </div>

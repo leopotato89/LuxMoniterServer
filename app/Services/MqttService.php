@@ -42,6 +42,21 @@ class MqttService
     }
 
     /**
+     * Kích hoạt nâng cấp firmware OTA từ xa.
+     * ESP32 subscribe topic `luxmonitor/<serial>/cmd/ota`.
+     */
+    public function publishOta(string $serial, string $url, string $md5, string $version): bool
+    {
+        $payload = [
+            'url' => $url,
+            'md5' => $md5,
+            'version' => $version,
+        ];
+
+        return $this->publish("luxmonitor/{$serial}/cmd/ota", (string) json_encode($payload));
+    }
+
+    /**
      * Publish 1 message (kết nối ngắn, gửi xong ngắt).
      */
     public function publish(string $topic, string $payload, int $qos = 0, bool $retain = false): bool

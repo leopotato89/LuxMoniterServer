@@ -30,23 +30,40 @@ const routes = [
     {
         path: '/',
         component: AppLayout,
-        meta: { auth: true },
         children: [
             {
                 path: '',
                 name: 'devices.index',
-                component: () => import('../views/DevicesIndex.vue'),
+                component: () => import('../views/DeviceShow.vue'),
+                meta: { auth: true },
             },
             {
-                path: ':serial',
-                name: 'devices.show',
-                component: () => import('../views/DeviceShow.vue'),
+                path: 'flash',
+                name: 'web-flasher',
+                component: () => import('../views/WebFlasher.vue'),
+            },
+            {
+                path: 'guide',
+                name: 'user-guide',
+                component: () => import('../views/UserGuide.vue'),
+            },
+            {
+                path: 'admin/devices',
+                name: 'admin.devices',
+                component: () => import('../views/DevicesIndex.vue'),
+                meta: { auth: true, admin: true },
             },
             {
                 path: 'admin/users',
                 name: 'admin.users',
                 component: () => import('../views/AdminUsers.vue'),
-                meta: { admin: true },
+                meta: { auth: true, admin: true },
+            },
+            {
+                path: ':serial',
+                name: 'devices.show',
+                component: () => import('../views/DeviceShow.vue'),
+                meta: { auth: true },
             },
         ],
     },

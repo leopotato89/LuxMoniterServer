@@ -1,0 +1,73 @@
+{
+  "version": "1.3.0",
+  "release_date": "2026-10-14",
+  "changelog": "Tích hợp Bluetooth BLE thay thế WiFi SoftAP để cấu hình WiFi & Dongle nhanh chóng; giải phóng tài nguyên sau khi kết nối.",
+  "boards": {
+    "devkit": {
+      "name": "ESP32 DevKit (D0WD / CH340 / CP2102)",
+      "chip": "ESP32",
+      "baudrate": 460800,
+      "ota_file": "firmware.bin",
+      "parts": [
+        {
+          "name": "Bootloader",
+          "file": "bootloader.bin",
+          "address": 4096
+        },
+        {
+          "name": "Partitions",
+          "file": "partitions.bin",
+          "address": 32768
+        },
+        {
+          "name": "Boot App0",
+          "file": "boot_app0.bin",
+          "address": 57344
+        },
+        {
+          "name": "Firmware (App)",
+          "file": "firmware.bin",
+          "address": 65536
+        },
+        {
+          "name": "LittleFS (Giao diện Web)",
+          "file": "littlefs.bin",
+          "address": 2686976
+        }
+      ]
+    },
+    "c3": {
+      "name": "ESP32-C3 SuperMini (USB-JTAG / CDC)",
+      "chip": "ESP32-C3",
+      "baudrate": 460800,
+      "ota_file": "firmware.bin",
+      "parts": [
+        {
+          "name": "Bootloader",
+          "file": "bootloader.bin",
+          "address": 0
+        },
+        {
+          "name": "Partitions",
+          "file": "partitions.bin",
+          "address": 32768
+        },
+        {
+          "name": "Boot App0",
+          "file": "boot_app0.bin",
+          "address": 57344
+        },
+        {
+          "name": "Firmware (App)",
+          "file": "firmware.bin",
+          "address": 65536
+        },
+        {
+          "name": "LittleFS (Giao diện Web)",
+          "file": "littlefs.bin",
+          "address": 2686976
+        }
+      ]
+    }
+  }
+}
