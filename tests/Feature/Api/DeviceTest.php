@@ -336,3 +336,32 @@ test('người lạ không được unclaim thiết bị', function () {
 
     expect($device->fresh()->owner_id)->toBe($owner->id);
 });
+
+test('energy API không trả về dữ liệu ngày trong tương lai', function () {
+    $owner = User::factory()->create();
+    $device = Device::factory()->create(['owner_id' => $owner->id]);
+
+    $tz = config('app.timezone');
+    $today = now($tz)->format('Y-m-d');
+    $tomorrow = now($tz)->addDay()->format('Y-m-d');
+    $yesterday = now($tz)->subDay()->format('Y-m-d');
+
+    $this->mock(InfluxService::class, function ($mock) use ($yesterday, $today, $tomorrow) {
+        $mock->shouldReceive('dailyEnergy')
+            ->once()
+            ->andReturn([
+                $yesterday => ['pv' => 10.0],
+                $today => ['pv' => 5.0],
+                $tomorrow => ['pv' => 99.0],
+            ]);
+    });
+
+    $resp = $this->actingAs($owner, 'sanctum')
+        ->getJson("/api/v1/devices/{$device->serial}/energy?type=month")
+        ->assertSuccessful();
+
+    $data = $resp->json('data');
+    expect($data)->toHaveKey($yesterday)
+        ->toHaveKey($today)
+        ->not->toHaveKey($tomorrow);
+});

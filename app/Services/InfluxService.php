@@ -124,8 +124,18 @@ class InfluxService
     public function daily(string $serial, string $date): array
     {
         return Cache::remember("influx_daily_{$serial}_{$date}", 60, function () use ($serial, $date) {
-            $start = Carbon::parse($date, config('app.timezone'))->startOfDay();
+            $tz = config('app.timezone');
+            $now = Carbon::now($tz);
+            $start = Carbon::parse($date, $tz)->startOfDay();
+
+            if ($start->isAfter($now)) {
+                return [];
+            }
+
             $stop = (clone $start)->addDay();
+            if ($stop->isAfter($now)) {
+                $stop = $now;
+            }
 
             $flux = sprintf(
                 'from(bucket: "%s")
@@ -166,6 +176,11 @@ class InfluxService
      */
     public function dailyEnergy(string $serial, string $start, string $stop): array
     {
+        $nowUtc = now('UTC');
+        if (Carbon::parse($stop)->isAfter($nowUtc)) {
+            $stop = $nowUtc->toIso8601ZuluString();
+        }
+
         return Cache::remember("influx_dailyEnergy_{$serial}_{$start}_{$stop}", 300, function () use ($serial, $start, $stop) {
             $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
             $timezone = config('app.timezone');
@@ -212,6 +227,11 @@ from(bucket: "%s")
      */
     public function monthlyEnergy(string $serial, string $start, string $stop): array
     {
+        $nowUtc = now('UTC');
+        if (Carbon::parse($stop)->isAfter($nowUtc)) {
+            $stop = $nowUtc->toIso8601ZuluString();
+        }
+
         return Cache::remember("influx_monthlyEnergy_{$serial}_{$start}_{$stop}", 3600, function () use ($serial, $start, $stop) {
             $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
             $timezone = config('app.timezone');
@@ -259,6 +279,11 @@ from(bucket: "%s")
      */
     public function yearlyEnergy(string $serial, string $start = '2020-01-01T00:00:00Z', string $stop = 'now()'): array
     {
+        $nowUtc = now('UTC');
+        if ($stop === 'now()' || Carbon::parse($stop)->isAfter($nowUtc)) {
+            $stop = $nowUtc->toIso8601ZuluString();
+        }
+
         return Cache::remember("influx_yearlyEnergy_{$serial}_{$start}_{$stop}", 3600, function () use ($serial, $start, $stop) {
             $fields = ['pv_energy_day', 'accouple_energy_day', 'charge_energy_day', 'discharge_energy_day', 'load_energy_day', 'import_energy_day', 'export_energy_day'];
             $timezone = config('app.timezone');
@@ -370,6 +395,7 @@ from(bucket: "%s")
     {
         $header = null;
         $lastByDay = [];
+        $today = Carbon::now(config('app.timezone'))->format('Y-m-d');
 
         foreach (preg_split('/\r?\n/', trim($csv)) ?: [] as $line) {
             if ($line === '' || str_starts_with($line, '#')) {
@@ -391,6 +417,10 @@ from(bucket: "%s")
             }
 
             $day = Carbon::parse($time)->setTimezone(config('app.timezone'))->format('Y-m-d');
+
+            if ($day > $today) {
+                continue;
+            }
 
             foreach ($fields as $f) {
                 $lastByDay[$day][$f] = (float) ($cols[$header[$f]] ?? 0);
@@ -424,6 +454,7 @@ from(bucket: "%s")
     {
         $header = null;
         $lastByDay = [];
+        $currentPeriod = Carbon::now(config('app.timezone'))->format($format);
 
         foreach (preg_split('/\r?\n/', trim($csv)) ?: [] as $line) {
             if ($line === '' || str_starts_with($line, '#')) {
@@ -445,6 +476,10 @@ from(bucket: "%s")
             }
 
             $day = Carbon::parse($time)->setTimezone(config('app.timezone'))->format($format);
+
+            if ($day > $currentPeriod) {
+                continue;
+            }
 
             foreach ($fields as $f) {
                 if (! isset($cols[$header[$f]]) || $cols[$header[$f]] === '') {
@@ -576,5 +611,38 @@ from(bucket: "%s")
         }
 
         return $points;
+    }
+
+    /**
+     * Xóa các bản ghi có thời gian ở tương lai (do lỗi trôi giờ hệ thống trên thiết bị/worker).
+     */
+    public function deleteFutureData(?Carbon $from = null, ?string $serial = null): bool
+    {
+        $start = ($from ?? now('UTC')->addSeconds(5))->toIso8601ZuluString();
+        $stop = '2035-01-01T00:00:00Z';
+
+        $predicate = '_measurement="inverter"';
+        if (! empty($serial)) {
+            $predicate .= ' AND device="'.addslashes($serial).'"';
+        }
+
+        $url = config('influx.url').'/api/v2/delete?org='.urlencode(config('influx.org')).'&bucket='.urlencode(config('influx.bucket'));
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Token '.config('influx.token'),
+            'Content-Type' => 'application/json',
+        ])->withBody(json_encode([
+            'start' => $start,
+            'stop' => $stop,
+            'predicate' => $predicate,
+        ], JSON_THROW_ON_ERROR), 'application/json')->post($url);
+
+        if ($response->successful()) {
+            Cache::flush();
+
+            return true;
+        }
+
+        return false;
     }
 }

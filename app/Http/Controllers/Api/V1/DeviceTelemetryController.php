@@ -115,23 +115,66 @@ class DeviceTelemetryController
         $date = $validated['date'] ?? null;
 
         $tz = config('app.timezone');
+        $now = Carbon::now($tz);
+        $todayStr = $now->format('Y-m-d');
+        $thisMonthStr = $now->format('Y-m');
+        $thisYearStr = $now->format('Y');
 
         if ($type === 'year') {
-            $yearStr = ! empty($date) ? substr($date, 0, 4) : now()->format('Y');
+            $yearStr = ! empty($date) ? substr($date, 0, 4) : $thisYearStr;
             $yearCarbon = Carbon::createFromDate((int) $yearStr, 1, 1, $tz)->startOfYear();
+
+            if ($yearCarbon->isAfter($now)) {
+                return response()->json(['data' => []]);
+            }
+
             $start = $yearCarbon->copy()->setTimezone('UTC')->toIso8601ZuluString();
-            $stop = $yearCarbon->copy()->addYear()->setTimezone('UTC')->toIso8601ZuluString();
+            $stopCarbon = $yearCarbon->copy()->addYear();
+            if ($stopCarbon->isAfter($now)) {
+                $stopCarbon = $now;
+            }
+            $stop = $stopCarbon->copy()->setTimezone('UTC')->toIso8601ZuluString();
+
             $data = $this->influx->monthlyEnergy($device->serial, $start, $stop);
+
+            $data = array_filter(
+                $data,
+                fn (string $key): bool => $key <= $thisMonthStr,
+                ARRAY_FILTER_USE_KEY
+            );
         } elseif ($type === 'all') {
             $start = '2020-01-01T00:00:00Z';
-            $stop = now()->addYear()->setTimezone('UTC')->toIso8601ZuluString();
+            $stop = $now->copy()->setTimezone('UTC')->toIso8601ZuluString();
+
             $data = $this->influx->yearlyEnergy($device->serial, $start, $stop);
+
+            $data = array_filter(
+                $data,
+                fn (string $key): bool => $key <= $thisYearStr,
+                ARRAY_FILTER_USE_KEY
+            );
         } else {
-            $monthStr = ! empty($date) ? substr($date, 0, 7) : now()->format('Y-m');
+            $monthStr = ! empty($date) ? substr($date, 0, 7) : $thisMonthStr;
             $monthCarbon = Carbon::parse($monthStr.'-01', $tz)->startOfMonth();
+
+            if ($monthCarbon->isAfter($now)) {
+                return response()->json(['data' => []]);
+            }
+
             $start = $monthCarbon->copy()->setTimezone('UTC')->toIso8601ZuluString();
-            $stop = $monthCarbon->copy()->addMonth()->setTimezone('UTC')->toIso8601ZuluString();
+            $stopCarbon = $monthCarbon->copy()->addMonth();
+            if ($stopCarbon->isAfter($now)) {
+                $stopCarbon = $now;
+            }
+            $stop = $stopCarbon->copy()->setTimezone('UTC')->toIso8601ZuluString();
+
             $data = $this->influx->dailyEnergy($device->serial, $start, $stop);
+
+            $data = array_filter(
+                $data,
+                fn (string $key): bool => $key <= $todayStr,
+                ARRAY_FILTER_USE_KEY
+            );
         }
 
         return response()->json(['data' => $data]);
