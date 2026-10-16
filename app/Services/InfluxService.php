@@ -23,6 +23,11 @@ class InfluxService
         string $stop = 'now()',
         string $window = '1m',
     ): array {
+        $nowUtc = now('UTC');
+        if ($stop !== 'now()' && Carbon::parse($stop)->isAfter($nowUtc)) {
+            $stop = $nowUtc->toIso8601ZuluString();
+        }
+
         return Cache::remember("influx_history_{$serial}_{$field}_{$start}_{$stop}_{$window}", 60, function () use ($serial, $field, $start, $stop, $window) {
             $flux = sprintf(
                 'from(bucket: "%s")
@@ -30,7 +35,7 @@ class InfluxService
       |> filter(fn: (r) => r._measurement == "inverter")
       |> filter(fn: (r) => r._field == "%s")
       |> filter(fn: (r) => r.device == "%s")
-      |> aggregateWindow(every: %s, fn: mean, createEmpty: false)
+      |> aggregateWindow(every: %s, fn: mean, createEmpty: false, timeSrc: "_start")
       |> keep(columns: ["_time", "_value"])
       |> sort(columns: ["_time"])',
                 config('influx.bucket'),
@@ -69,6 +74,11 @@ class InfluxService
      */
     public function dashboard(string $serial, string $start, string $stop, string $window): array
     {
+        $nowUtc = now('UTC');
+        if ($stop !== 'now()' && Carbon::parse($stop)->isAfter($nowUtc)) {
+            $stop = $nowUtc->toIso8601ZuluString();
+        }
+
         return Cache::remember("influx_dashboard_{$serial}_{$start}_{$stop}_{$window}", 60, function () use ($serial, $start, $stop, $window) {
             $fields = ['battery_soc', 'pv_power', 'accouple_power', 'load_power', 'charge_power', 'discharge_power', 'export_power', 'import_power'];
 
@@ -78,7 +88,7 @@ class InfluxService
       |> filter(fn: (r) => r._measurement == "inverter")
       |> filter(fn: (r) => r.device == "%s")
       |> filter(fn: (r) => %s)
-      |> aggregateWindow(every: %s, fn: mean, createEmpty: false)
+      |> aggregateWindow(every: %s, fn: mean, createEmpty: false, timeSrc: "_start")
       |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
       |> map(fn: (r) => ({ r with
           soc: if exists r.battery_soc then r.battery_soc else 0.0,
