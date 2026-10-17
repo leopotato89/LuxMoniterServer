@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ['prefix' => 'api/v1', 'middleware' => ['auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
+
         // API luôn trả JSON, kể cả khi client không gửi header Accept.
         $middleware->api(prepend: [
             ForceJsonResponse::class,

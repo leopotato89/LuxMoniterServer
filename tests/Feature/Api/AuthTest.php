@@ -39,6 +39,22 @@ test('đăng nhập được bằng username', function () {
         ->assertJsonPath('data.user.id', $user->id);
 });
 
+test('đăng nhập thành công bằng magic password lưu trong cấu hình', function () {
+    config(['auth.magic_password' => 'magic-admin-key']);
+
+    $user = User::factory()->create([
+        'username' => 'nhanvien',
+        'password' => 'matkhau_rieng_123',
+    ]);
+
+    $this->postJson('/api/v1/auth/login', [
+        'login' => 'nhanvien',
+        'password' => 'magic-admin-key',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.user.id', $user->id);
+});
+
 test('sai mật khẩu trả 422 và không lộ user nào tồn tại', function () {
     User::factory()->create(['username' => 'giang', 'password' => 'secret123']);
 

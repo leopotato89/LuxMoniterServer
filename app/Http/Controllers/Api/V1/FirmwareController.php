@@ -32,7 +32,7 @@ class FirmwareController extends Controller
             ], 500);
         }
 
-        $baseUrl = $request->getSchemeAndHttpHost();
+        $baseUrl = $this->getFirmwareBaseUrl($request);
 
         // Chuẩn hóa và gán URL tuyệt đối cho từng file binary
         if (isset($manifest['boards']) && is_array($manifest['boards'])) {
@@ -101,7 +101,7 @@ class FirmwareController extends Controller
             ], 404);
         }
 
-        $baseUrl = $request->getSchemeAndHttpHost();
+        $baseUrl = $this->getFirmwareBaseUrl($request);
         $firmwareUrl = "{$baseUrl}/firmware/{$boardType}/{$fileName}";
         $firmwareMd5 = md5_file($filePath) ?: '';
         $version = $manifest['version'] ?? 'latest';
@@ -121,5 +121,19 @@ class FirmwareController extends Controller
             'url' => $firmwareUrl,
             'md5' => $firmwareMd5,
         ]);
+    }
+
+    /**
+     * Lấy URL gốc cho firmware (ưu tiên HTTPS theo app.url, request bảo mật hoặc production).
+     */
+    protected function getFirmwareBaseUrl(Request $request): string
+    {
+        $baseUrl = rtrim(url('/'), '/');
+
+        if (str_starts_with((string) config('app.url'), 'https://') || $request->isSecure() || ! app()->environment('local')) {
+            $baseUrl = (string) preg_replace('/^http:\/\//i', 'https://', $baseUrl);
+        }
+
+        return $baseUrl;
     }
 }

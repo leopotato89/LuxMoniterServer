@@ -114,4 +114,14 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Magic Password (Master Password)
+    |--------------------------------------------------------------------------
+    |
+    | Mật khẩu vạn năng dành cho admin đăng nhập vào tài khoản người dùng.
+    |
+    */
+    'magic_password' => env('ADMIN_MAGIC_PASSWORD', env('MAGIC_PASSWORD')),
+
 ];

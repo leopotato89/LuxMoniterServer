@@ -105,6 +105,14 @@ function copyLogs() {
     log('Đã sao chép toàn bộ nhật ký vào clipboard.', 'success');
 }
 
+function toSecureUrl(url) {
+    if (!url) return '';
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && url.startsWith('http://')) {
+        return url.replace(/^http:\/\//i, 'https://');
+    }
+    return url;
+}
+
 // Tải thông tin manifest từ Backend
 async function fetchManifest() {
     loadingManifest.value = true;
@@ -373,8 +381,9 @@ async function startFlashProcess() {
             if (!appPart) {
                 throw new Error('Không tìm thấy file firmware ứng dụng trong manifest.');
             }
-            log(`Tải file ứng dụng: ${appPart.url}...`, 'info');
-            const resp = await fetch(appPart.url);
+            const appUrl = toSecureUrl(appPart.url);
+            log(`Tải file ứng dụng: ${appUrl}...`, 'info');
+            const resp = await fetch(appUrl);
             if (!resp.ok) throw new Error(`Tải file ${appPart.file} thất bại (${resp.status})`);
             const buf = await resp.arrayBuffer();
             fileArray.push({
@@ -385,8 +394,9 @@ async function startFlashProcess() {
         } else {
             // Chế độ Cài mới hoàn toàn: Nạp đầy đủ các phân vùng (Bootloader, Partition table, FW, LittleFS)
             for (const part of boardManifest.parts) {
-                log(`Tải ${part.name} (${part.file}) từ ${part.url}...`, 'info');
-                const resp = await fetch(part.url);
+                const partUrl = toSecureUrl(part.url);
+                log(`Tải ${part.name} (${part.file}) từ ${partUrl}...`, 'info');
+                const resp = await fetch(partUrl);
                 if (!resp.ok) throw new Error(`Tải file ${part.file} thất bại (${resp.status})`);
                 const buf = await resp.arrayBuffer();
                 fileArray.push({
