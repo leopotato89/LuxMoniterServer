@@ -310,16 +310,17 @@ onUnmounted(() => {
                             <div class="pl-10 text-xs text-muted">
                                 Sau khi điện thoại hoặc laptop đã kết nối vào mạng WiFi phát từ ESP32, mở trình duyệt web và truy cập:
                                 <div class="mt-1.5 inline-flex items-center gap-2 font-mono font-bold text-brand bg-surface px-3 py-1.5 rounded-lg border border-line">
-                                    <span>http://192.168.4.1</span>
+                                    <span>http://192.168.9.1</span>
                                     <button
                                         type="button"
-                                        @click="copyText('http://192.168.4.1', 'địa chỉ web AP')"
+                                        @click="copyText('http://192.168.9.1', 'địa chỉ web AP')"
                                         class="text-muted hover:text-ink ml-1"
                                         title="Sao chép"
                                     >
                                         <DocumentDuplicateIcon class="w-3.5 h-3.5" />
                                     </button>
                                 </div>
+                                <span class="block mt-1 text-[11px] text-muted italic">(hoặc http://192.168.4.1 đối với các bản firmware cũ)</span>
                             </div>
                         </div>
 
@@ -333,7 +334,7 @@ onUnmounted(() => {
                                 <div class="flex items-start gap-2">
                                     <span class="font-bold text-ink shrink-0">• Thao tác:</span>
                                     <span>
-                                        Trên giao diện web <code class="font-mono text-ink">192.168.4.1</code>, bấm nút <strong>"Quét"</strong> → Chọn tên WiFi gia đình của bạn từ danh sách (lưu ý: <strong>chỉ chọn mạng băng tần 2.4GHz</strong>) → Nhập mật khẩu WiFi → Bấm <strong>"Kết Nối"</strong>.
+                                        Trên giao diện web <code class="font-mono text-ink">192.168.9.1</code>, bấm nút <strong>"Quét"</strong> → Chọn tên WiFi gia đình của bạn từ danh sách (lưu ý: <strong>chỉ chọn mạng băng tần 2.4GHz</strong>) → Nhập mật khẩu WiFi → Bấm <strong>"Kết Nối"</strong>.
                                     </span>
                                 </div>
 
