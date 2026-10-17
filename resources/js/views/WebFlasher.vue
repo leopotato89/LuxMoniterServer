@@ -56,13 +56,13 @@ const affiliateUsbUrl = import.meta.env.VITE_AFFILIATE_USB_CABLE_URL || 'https:/
 const chipInfo = ref({
     model: '',
     flashSize: '',
-    boardType: '', // 'devkit' hoặc 'c3'
+    boardType: '', // 'devkit', 'c3' hoặc 's3'
 });
 
-// Kiểm tra xem chip có phải là dòng ESP32 được hỗ trợ (DevKit hoặc C3)
+// Kiểm tra xem chip có phải là dòng ESP32 được hỗ trợ (DevKit, C3 hoặc S3)
 const isEsp32Supported = computed(() => {
     if (!isConnected.value || !chipInfo.value.model) return false;
-    return chipInfo.value.boardType === 'devkit' || chipInfo.value.boardType === 'c3';
+    return chipInfo.value.boardType === 'devkit' || chipInfo.value.boardType === 'c3' || chipInfo.value.boardType === 's3';
 });
 
 // Xác định loại bo mạch thân thiện
@@ -71,6 +71,9 @@ const detectedBoardLabel = computed(() => {
     const model = chipInfo.value.model.toUpperCase();
     if (model.includes('ESP32-C3') || model.includes('ESP32C3')) {
         return 'ESP32-C3 SuperMini';
+    }
+    if (model.includes('ESP32-S3') || model.includes('ESP32S3')) {
+        return 'ESP32-S3 (N16R8 / Dual-Core)';
     }
     if (model.includes('ESP32')) {
         return 'ESP32 DevKit (WROOM / NodeMCU)';
@@ -228,6 +231,8 @@ async function connectPort() {
         const upper = chipModel.toUpperCase();
         if (upper.includes('ESP32-C3') || upper.includes('ESP32C3')) {
             chipInfo.value.boardType = 'c3';
+        } else if (upper.includes('ESP32-S3') || upper.includes('ESP32S3')) {
+            chipInfo.value.boardType = 's3';
         } else if (upper.includes('ESP32')) {
             chipInfo.value.boardType = 'devkit';
         } else {

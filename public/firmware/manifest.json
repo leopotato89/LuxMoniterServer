@@ -68,6 +68,39 @@
           "address": 2686976
         }
       ]
+    },
+    "s3": {
+      "name": "ESP32-S3 (N16R8 / 16MB Flash / 8MB PSRAM)",
+      "chip": "ESP32-S3",
+      "baudrate": 921600,
+      "ota_file": "firmware.bin",
+      "parts": [
+        {
+          "name": "Bootloader",
+          "file": "bootloader.bin",
+          "address": 0
+        },
+        {
+          "name": "Partitions",
+          "file": "partitions.bin",
+          "address": 32768
+        },
+        {
+          "name": "Boot App0",
+          "file": "boot_app0.bin",
+          "address": 57344
+        },
+        {
+          "name": "Firmware (App)",
+          "file": "firmware.bin",
+          "address": 65536
+        },
+        {
+          "name": "LittleFS (Giao diện Web)",
+          "file": "littlefs.bin",
+          "address": 13172736
+        }
+      ]
     }
   }
 }

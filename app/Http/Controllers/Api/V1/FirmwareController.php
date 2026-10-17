@@ -71,7 +71,7 @@ class FirmwareController extends Controller
         Gate::authorize('update', $device);
 
         $validated = $request->validate([
-            'board' => ['nullable', 'string', 'in:devkit,c3'],
+            'board' => ['nullable', 'string', 'in:devkit,c3,s3'],
         ]);
 
         $boardType = $validated['board'] ?? 'devkit';
