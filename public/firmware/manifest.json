@@ -1,7 +1,7 @@
 {
-  "version": "1.3.0",
-  "release_date": "2026-10-14",
-  "changelog": "Tích hợp Bluetooth BLE thay thế WiFi SoftAP để cấu hình WiFi & Dongle nhanh chóng; giải phóng tài nguyên sau khi kết nối.",
+  "version": "1.3.1",
+  "release_date": "2026-10-19",
+  "changelog": "Bổ sung cơ chế Fallback tự động tính toán công suất tải (Load Power) khi biến tần không gắn CT (Pload = 0); bổ sung trường rec_power.",
   "boards": {
     "devkit": {
       "name": "ESP32 DevKit (D0WD / CH340 / CP2102)",
